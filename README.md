@@ -113,3 +113,50 @@ native/
 ├─ package.json
 ├─ README.md
 └─ tsconfig.json
+
+
+native/
+├─ app/
+│  ├─ (tabs)/
+│  │  ├─ a/
+│  │  │  ├─ _layout.tsx
+│  │  │  └─ index.tsx
+│  │  ├─ b/
+│  │  │  ├─ _layout.tsx
+│  │  │  └─ index.tsx
+│  │  └─ _layout.tsx
+│  ├─ _layout.tsx
+│  └─ index.tsx
+├─ assets/
+├─ components/
+│  ├─ atom/
+│  │  ├─ button.tsx
+│  │  ├─ chip.tsx
+│  │  ├─ divider.tsx
+│  │  ├─ icon.tsx
+│  │  ├─ skeleton.tsx
+│  │  ├─ spinner.tsx
+│  │  └─ text.tsx
+│  ├─ molecule/
+│  │  ├─ alert.tsx
+│  │  ├─ emptyState.tsx
+│  │  ├─ errorState.tsx
+│  │  └─ toast.tsx
+│  └─ shared/
+│     ├─ header.tsx
+│     ├─ navBar.tsx
+│     └─ themeToggle.tsx
+├─ constants/
+│  ├─ design.ts
+│  └─ theme.ts
+├─ contexts/
+│  ├─ designContext.tsx
+│  └─ themeContext.tsx
+├─ .gitignore
+├─ app.json
+├─ expo-env.d.ts
+├─ package-lock.json
+├─ package.json
+├─ README.md
+└─ tsconfig.json
+

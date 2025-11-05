@@ -1,9 +1,14 @@
 // constants/theme.ts
-import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from "react-native-paper";
+import { MD3DarkTheme, MD3LightTheme, configureFonts, type MD3Theme } from "react-native-paper";
+
+const fontConfig = {
+  fontFamily: "ComicNeue_400Regular",
+};
 
 export const lightTheme: MD3Theme = {
   ...MD3LightTheme,
   roundness: 12,
+  fonts: configureFonts({ config: fontConfig }),
   colors: {
     ...MD3LightTheme.colors,
 
@@ -64,6 +69,7 @@ export const lightTheme: MD3Theme = {
 export const darkTheme: MD3Theme = {
   ...MD3DarkTheme,
   roundness: 12,
+  fonts: configureFonts({ config: fontConfig }),
   colors: {
     ...MD3DarkTheme.colors,
 

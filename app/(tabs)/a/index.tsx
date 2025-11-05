@@ -14,7 +14,6 @@ export default function Home() {
         backgroundColor: colors.background,
         padding: tokens.spacing.lg,
         gap: tokens.spacing.md,
-        borderRadius: tokens.radii.lg,
       }}
     >
       <Text variant="titleLarge">Density: {density}</Text>
