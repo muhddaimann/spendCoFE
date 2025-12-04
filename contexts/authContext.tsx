@@ -10,7 +10,7 @@ import { router } from "expo-router";
 import { useOverlay } from "../hooks/useOverlay";
 import { useTokenStorage } from "./tokenStorage";
 import { apiLogin, apiLogout } from "./api/auth";
-import { apiGetMe, type User } from "./api/user";
+import { apiGetMe, apiRegister, type User } from "./api/user";
 
 type AuthCtx = {
   user: User | null;
@@ -18,6 +18,12 @@ type AuthCtx = {
   loading: boolean;
   error: string | null;
   signIn: (login: string, password: string) => Promise<boolean>;
+  signUp: (
+    username: string,
+    email: string,
+    password: string,
+    confirm: string
+  ) => Promise<boolean>;
   signOut: () => Promise<void>;
   bootstrapped: boolean;
   clearError: () => void;
@@ -29,6 +35,7 @@ const Ctx = createContext<AuthCtx>({
   loading: false,
   error: null,
   signIn: async () => false,
+  signUp: async () => false,
   signOut: async () => {},
   bootstrapped: false,
   clearError: () => {},
@@ -95,7 +102,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await apiLogin({ login, password });
         await setToken(res.token);
 
-        // Fetch user details after successful login
         const fetchedUser = await apiGetMe();
         setUser(fetchedUser);
 
@@ -118,6 +124,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
     [setToken, toast]
+  );
+
+  const signUp = useCallback(
+    async (
+      username: string,
+      email: string,
+      password: string,
+      confirm: string
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await apiRegister({
+          username,
+          email,
+          password,
+          password_confirmation: confirm,
+        });
+
+        toast({
+          message: "Registration successful! Please sign in.",
+          variant: "success",
+        });
+
+        router.replace("/");
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        router.push("/signIn");
+
+        return true;
+      } catch (e: any) {
+        const msg = e?.message || "Registration failed. Please try again.";
+        setError(msg);
+        toast({ message: msg, variant: "error" });
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [toast]
   );
 
   const signOut = useCallback(async () => {
@@ -148,11 +195,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       error,
       signIn,
+      signUp,
       signOut,
       bootstrapped,
       clearError,
     }),
-    [user, loading, error, signIn, signOut, bootstrapped, clearError]
+    [user, loading, error, signIn, signUp, signOut, bootstrapped, clearError]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

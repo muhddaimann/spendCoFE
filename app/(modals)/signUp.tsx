@@ -10,24 +10,22 @@ import { useTheme, TextInput, Divider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import { Button } from "../../components/atom/button";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { H2, BodySmall } from "../../components/atom/text";
-import { apiRegister } from "../../contexts/api/user";
-import { useOverlay } from "../../hooks/useOverlay";
+import { useAuth } from "../../contexts/authContext";
 
 export default function SignUpModal() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const { toast } = useOverlay();
+  const { signUp, loading, clearError } = useAuth();
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [fieldErr, setFieldErr] = useState<{
     username?: string;
     email?: string;
@@ -70,6 +68,7 @@ export default function SignUpModal() {
   useFocusEffect(
     React.useCallback(() => {
       return () => {
+        clearError();
         setUsername("");
         setEmail("");
         setPassword("");
@@ -79,7 +78,7 @@ export default function SignUpModal() {
         setFieldErr({});
         shake.setValue(0);
       };
-    }, [shake])
+    }, [clearError, shake])
   );
 
   const onSubmit = async () => {
@@ -101,33 +100,7 @@ export default function SignUpModal() {
       return;
     }
 
-    setLoading(true);
-    try {
-      await apiRegister({
-        username: u,
-        email: e,
-        password: p,
-        password_confirmation: c,
-      });
-
-      toast({
-        message: "Registration successful! Please sign in.",
-        variant: "success",
-      });
-
-      router.push("/");
-
-      await new Promise((resolve) => setTimeout(resolve, 400));
-
-      router.push("/signIn");
-    } catch (err: any) {
-      toast({
-        message: err.message || "Registration failed. Please try again.",
-        variant: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
+    await signUp(u, e, p, c);
   };
 
   return (
