@@ -1,22 +1,23 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
-  useCallback,
-  useEffect,
 } from "react";
 import { router } from "expo-router";
 import { useOverlay } from "../hooks/useOverlay";
-
-type User = { username: string } | null;
+import { useTokenStorage } from "./tokenStorage";
+import { apiLogin, apiLogout } from "./api/auth";
+import { apiGetMe, type User } from "./api/user";
 
 type AuthCtx = {
-  user: User;
+  user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  signIn: (username: string, password: string) => Promise<boolean>;
+  signIn: (login: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   bootstrapped: boolean;
   clearError: () => void;
@@ -34,40 +35,89 @@ const Ctx = createContext<AuthCtx>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(null);
-  const [loading, setLoading] = useState(false);
+  const {
+    token,
+    bootstrapped: tokenBootstrapped,
+    setToken,
+  } = useTokenStorage();
+  const [user, setUser] = useState<User | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast, confirm } = useOverlay();
 
   useEffect(() => {
-    setBootstrapped(true);
-  }, []);
+    if (!tokenBootstrapped) return;
+
+    if (!token) {
+      setUser(null);
+      setBootstrapped(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadMe() {
+      setLoading(true);
+      setError(null);
+      try {
+        const me = await apiGetMe();
+        if (!cancelled) {
+          setUser(me);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setUser(null);
+          await setToken(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setBootstrapped(true);
+        }
+      }
+    }
+
+    loadMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, tokenBootstrapped, setToken]);
 
   const clearError = useCallback(() => setError(null), []);
 
   const signIn = useCallback(
-    async (username: string, password: string) => {
+    async (login: string, password: string) => {
       setLoading(true);
       setError(null);
-      await new Promise((r) => setTimeout(r, 250));
+      try {
+        const res = await apiLogin({ login, password });
+        await setToken(res.token);
 
-      const ok = username === "user" && password === "123";
+        // Fetch user details after successful login
+        const fetchedUser = await apiGetMe();
+        setUser(fetchedUser);
 
-      if (ok) {
-        setUser({ username });
-        toast({ message: `Signed in as ${username}`, variant: "success" });
+        const displayName = fetchedUser.username;
+
+        toast({
+          message: `Signed in as ${displayName}`,
+          variant: "success",
+        });
+
         router.replace("/welcome");
-      } else {
-        const msg = "Invalid credentials";
+        return true;
+      } catch (e: any) {
+        const msg = e?.message || "Unable to sign in";
         setError(msg);
         toast({ message: msg, variant: "error" });
+        return false;
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
-      return ok;
     },
-    [toast]
+    [setToken, toast]
   );
 
   const signOut = useCallback(async () => {
@@ -80,11 +130,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (!ok) return;
 
+    try {
+      await apiLogout();
+    } catch {}
+
+    await setToken(null);
     setUser(null);
     setError(null);
     toast({ message: "Signed out", variant: "info" });
     router.replace("/goodbye");
-  }, [confirm, toast]);
+  }, [confirm, toast, setToken]);
 
   const value = useMemo(
     () => ({

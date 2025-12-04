@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { View } from "react-native";
-import { useTheme, Text, TextInput, Divider } from "react-native-paper";
+import { useTheme, TextInput, Divider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import { Button } from "../../components/atom/button";
 import { useRouter } from "expo-router";
+import { H2, BodySmall } from "../../components/atom/text";
+import { apiForgotPassword } from "../../contexts/api/auth"; // Import apiForgotPassword
+import { useOverlay } from "../../hooks/useOverlay"; // Import useOverlay
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -13,17 +16,33 @@ export default function ForgotPasswordModal() {
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { toast } = useOverlay(); // Initialize toast
 
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const valid = useMemo(() => isValidEmail(email), [email]);
   const showErr = touched && email.length > 0 && !valid;
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     setTouched(true);
     if (!valid) return;
-    router.back();
+
+    setLoading(true); // Set loading to true
+    try {
+      await apiForgotPassword({ email });
+      toast({
+        message: "Password reset link sent to your email.",
+        variant: "success",
+      });
+      router.back();
+    } catch (e: any) {
+      const msg = e?.message || "Failed to send reset link.";
+      toast({ message: msg, variant: "error" });
+    } finally {
+      setLoading(false); // Set loading to false
+    }
   };
 
   return (
@@ -38,18 +57,20 @@ export default function ForgotPasswordModal() {
         }}
       >
         <View style={{ gap: tokens.spacing.xs, alignItems: "center" }}>
-          <Text
-            style={{
-              color: colors.onBackground,
-              fontSize: tokens.typography.sizes["2xl"],
-              fontWeight: "700",
-            }}
+          <H2
+            weight="bold"
+            align="center"
+            style={{ fontSize: tokens.typography.sizes["2xl"] }}
           >
             Reset password
-          </Text>
-          <Text style={{ color: colors.onSurfaceVariant }}>
+          </H2>
+          <BodySmall
+            muted
+            align="center"
+            style={{ color: colors.onSurfaceVariant }}
+          >
             Enter your email to receive reset instructions
-          </Text>
+          </BodySmall>
         </View>
 
         <View style={{ gap: tokens.spacing.xs }}>
@@ -70,36 +91,44 @@ export default function ForgotPasswordModal() {
             onBlur={() => setTouched(true)}
             returnKeyType="send"
             onSubmitEditing={onSubmit}
+            disabled={loading} // Disable input while loading
           />
           {showErr ? (
-            <Text style={{ color: colors.error, marginTop: -6 }}>
+            <BodySmall
+              style={{
+                color: colors.error,
+                marginTop: -6,
+                fontSize: tokens.typography.sizes.xs,
+              }}
+            >
               Please enter a valid email address
-            </Text>
+            </BodySmall>
           ) : null}
         </View>
 
         <Divider style={{ marginTop: tokens.spacing.xs }} />
 
         <View style={{ gap: tokens.spacing.xs, alignItems: "center" }}>
-          <Text
+          <BodySmall
+            align="center"
             style={{
               color: colors.onSurfaceVariant,
               fontSize: tokens.typography.sizes.sm,
-              textAlign: "center",
             }}
           >
             Double-check your email spelling. If the account exists, we’ll send
             a reset link shortly.
-          </Text>
-          <Text
+          </BodySmall>
+          <BodySmall
+            muted
+            align="center"
             style={{
               color: colors.onSurfaceVariant,
               fontSize: tokens.typography.sizes.xs,
-              textAlign: "center",
             }}
           >
             Didn’t receive it? Check spam/junk or try again in a few minutes.
-          </Text>
+          </BodySmall>
         </View>
       </View>
 
@@ -120,11 +149,11 @@ export default function ForgotPasswordModal() {
           <Button
             onPress={onSubmit}
             variant="default"
-            disabled={!valid}
+            disabled={!valid || loading} // Disable button while loading
             fullWidth
             rounded="sm"
           >
-            Send reset link
+            {loading ? "Sending..." : "Send reset link"} {/* Update button text */}
           </Button>
         </View>
       </View>

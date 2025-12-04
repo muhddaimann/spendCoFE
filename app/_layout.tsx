@@ -20,6 +20,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
+import { TokenStorageProvider } from "../contexts/tokenStorage";
 
 void (async () => {
   try {
@@ -91,9 +92,11 @@ export default function RootLayout() {
               ToastUI={ToastBar}
               ModalUI={ModalSheet}
             >
-              <AuthProvider>
-                <AppShell />
-              </AuthProvider>
+              <TokenStorageProvider>
+                <AuthProvider>
+                  <AppShell />
+                </AuthProvider>
+              </TokenStorageProvider>
             </OverlayProvider>
           </DesignProvider>
         </ThemeProvider>

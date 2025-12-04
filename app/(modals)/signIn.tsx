@@ -6,34 +6,34 @@ import {
   Animated,
   InteractionManager,
 } from "react-native";
-import { useTheme, Text, TextInput, Divider } from "react-native-paper";
+import { useTheme, TextInput, Divider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import { Button } from "../../components/atom/button";
 import { useAuth } from "../../contexts/authContext";
 import { useFocusEffect } from "expo-router";
+import { H2, BodySmall } from "../../components/atom/text";
 
 export default function SignInModal() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
   const { signIn, loading, error, clearError } = useAuth();
-
-  const [username, setUsername] = useState("");
+  const [login, setLogin] = useState(""); // Changed from username to login
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [fieldErr, setFieldErr] = useState<{ user?: string; pass?: string }>(
+  const [fieldErr, setFieldErr] = useState<{ login?: string; pass?: string }>( // Changed from user to login
     {}
   );
-  const userRef = useRef<RNInput>(null);
+  const loginRef = useRef<RNInput>(null); // Changed from userRef to loginRef
   const passRef = useRef<RNInput>(null);
   const shake = useRef(new Animated.Value(0)).current;
 
-  const isValid = username.trim().length > 0 && password.trim().length > 0;
+  const isValid = login.trim().length > 0 && password.trim().length > 0; // Changed from username to login
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
-      requestAnimationFrame(() => userRef.current?.focus());
+      requestAnimationFrame(() => loginRef.current?.focus()); // Changed from userRef to loginRef
     });
     return () => task.cancel();
   }, []);
@@ -46,7 +46,7 @@ export default function SignInModal() {
     React.useCallback(() => {
       return () => {
         clearError();
-        setUsername("");
+        setLogin(""); // Changed from setUsername to setLogin
         setPassword("");
         setShowPass(false);
         setFieldErr({});
@@ -87,15 +87,15 @@ export default function SignInModal() {
   }, [error, shake]);
 
   const onSubmit = async () => {
-    const u = username.trim();
+    const l = login.trim(); // Changed from u to l
     const p = password.trim();
     const nextErr: typeof fieldErr = {};
-    if (!u) nextErr.user = "Required";
+    if (!l) nextErr.login = "Required"; // Changed from user to login
     if (!p) nextErr.pass = "Required";
     setFieldErr(nextErr);
     if (Object.keys(nextErr).length) return;
 
-    const ok = await signIn(u, p);
+    const ok = await signIn(l, p); // Changed from u to l
     if (!ok) {
       setPassword("");
       passRef.current?.focus();
@@ -119,16 +119,16 @@ export default function SignInModal() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ gap: tokens.spacing.xxs, alignItems: "center" }}>
-          <Text
-            style={{
-              color: colors.onBackground,
-              fontSize: tokens.typography.sizes["2xl"],
-              fontWeight: "700",
-            }}
+          <H2
+            weight="bold"
+            align="center"
+            style={{ fontSize: tokens.typography.sizes["2xl"] }}
           >
             Sign in
-          </Text>
-          <Text style={{ color: colors.onSurfaceVariant }}>Welcome back</Text>
+          </H2>
+          <BodySmall muted align="center">
+            Welcome back
+          </BodySmall>
         </View>
 
         {!!error && (
@@ -142,9 +142,12 @@ export default function SignInModal() {
               paddingHorizontal: tokens.spacing.md,
             }}
           >
-            <Text style={{ color: colors.onErrorContainer, fontWeight: "600" }}>
+            <BodySmall
+              weight="semibold"
+              style={{ color: colors.onErrorContainer }}
+            >
               {error}
-            </Text>
+            </BodySmall>
           </View>
         )}
 
@@ -152,23 +155,29 @@ export default function SignInModal() {
           <View style={{ gap: tokens.spacing.md }}>
             <TextInput
               mode="outlined"
-              label="Username"
-              value={username}
+              label="Username" // Changed from Username
+              value={login} // Changed from username to login
               onChangeText={(t) => {
-                setUsername(t);
-                if (fieldErr.user)
-                  setFieldErr((e) => ({ ...e, user: undefined }));
+                setLogin(t); // Changed from setUsername to setLogin
+                if (fieldErr.login) // Changed from user to login
+                  setFieldErr((e) => ({ ...e, login: undefined })); // Changed from user to login
               }}
               autoCapitalize="none"
               returnKeyType="next"
               onSubmitEditing={() => passRef.current?.focus()}
-              error={!!fieldErr.user}
-              ref={userRef}
+              error={!!fieldErr.login} // Changed from user to login
+              ref={loginRef} // Changed from userRef to loginRef
             />
-            {fieldErr.user ? (
-              <Text style={{ color: colors.error, marginTop: -8 }}>
-                {fieldErr.user}
-              </Text>
+            {fieldErr.login ? ( // Changed from user to login
+              <BodySmall
+                style={{
+                  color: colors.error,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
+                {fieldErr.login}
+              </BodySmall>
             ) : null}
 
             <TextInput
@@ -194,9 +203,15 @@ export default function SignInModal() {
               }
             />
             {fieldErr.pass ? (
-              <Text style={{ color: colors.error, marginTop: -8 }}>
+              <BodySmall
+                style={{
+                  color: colors.error,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
                 {fieldErr.pass}
-              </Text>
+              </BodySmall>
             ) : null}
           </View>
         </Animated.View>
@@ -204,7 +219,6 @@ export default function SignInModal() {
         <Divider style={{ marginTop: tokens.spacing.sm }} />
       </ScrollView>
 
-      {/* Fixed CTA */}
       <View
         pointerEvents="box-none"
         style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}

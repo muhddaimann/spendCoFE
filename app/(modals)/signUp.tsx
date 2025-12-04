@@ -6,31 +6,37 @@ import {
   Animated,
   InteractionManager,
 } from "react-native";
-import { useTheme, Text, TextInput, Divider } from "react-native-paper";
+import { useTheme, TextInput, Divider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import { Button } from "../../components/atom/button";
-import { useAuth } from "../../contexts/authContext";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { H2, BodySmall } from "../../components/atom/text";
+import { apiRegister } from "../../contexts/api/user";
+import { useOverlay } from "../../hooks/useOverlay";
 
 export default function SignUpModal() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
-  const { signIn, loading, error, clearError } = useAuth();
-
+  const router = useRouter();
+  const { toast } = useOverlay();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [fieldErr, setFieldErr] = useState<{
-    user?: string;
+    username?: string;
+    email?: string;
     pass?: string;
     conf?: string;
   }>({});
 
-  const userRef = useRef<RNInput>(null);
+  const usernameRef = useRef<RNInput>(null);
+  const emailRef = useRef<RNInput>(null);
   const passRef = useRef<RNInput>(null);
   const confRef = useRef<RNInput>(null);
   const shake = useRef(new Animated.Value(0)).current;
@@ -49,26 +55,23 @@ export default function SignUpModal() {
 
   const isValid =
     username.trim().length > 0 &&
+    email.trim().length > 0 &&
     password.trim().length > 0 &&
     confirm.trim().length > 0 &&
     !mismatch;
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
-      requestAnimationFrame(() => userRef.current?.focus());
+      requestAnimationFrame(() => usernameRef.current?.focus());
     });
     return () => task.cancel();
   }, []);
 
-  useEffect(() => {
-    clearError();
-  }, [clearError]);
-
   useFocusEffect(
     React.useCallback(() => {
       return () => {
-        clearError();
         setUsername("");
+        setEmail("");
         setPassword("");
         setConfirm("");
         setShowPass(false);
@@ -76,56 +79,55 @@ export default function SignUpModal() {
         setFieldErr({});
         shake.setValue(0);
       };
-    }, [clearError, shake])
+    }, [shake])
   );
-
-  useEffect(() => {
-    if (!error) return;
-    Animated.sequence([
-      Animated.timing(shake, {
-        toValue: 8,
-        duration: 60,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: -8,
-        duration: 60,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: 6,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: -6,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shake, {
-        toValue: 0,
-        duration: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [error, shake]);
 
   const onSubmit = async () => {
     const u = username.trim();
+    const e = email.trim();
     const p = password.trim();
     const c = confirm.trim();
     const nextErr: typeof fieldErr = {};
-    if (!u) nextErr.user = "Required";
+    if (!u) nextErr.username = "Required";
+    if (!e) nextErr.email = "Required";
     if (!p) nextErr.pass = "Required";
     if (!c) nextErr.conf = "Required";
     setFieldErr(nextErr);
     if (Object.keys(nextErr).length || mismatch) {
-      if (!u) userRef.current?.focus();
+      if (!u) usernameRef.current?.focus();
+      else if (!e) emailRef.current?.focus();
       else if (!p) passRef.current?.focus();
       else confRef.current?.focus();
       return;
     }
-    await signIn(u, p);
+
+    setLoading(true);
+    try {
+      await apiRegister({
+        username: u,
+        email: e,
+        password: p,
+        password_confirmation: c,
+      });
+
+      toast({
+        message: "Registration successful! Please sign in.",
+        variant: "success",
+      });
+
+      router.push("/");
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      router.push("/signIn");
+    } catch (err: any) {
+      toast({
+        message: err.message || "Registration failed. Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -145,33 +147,14 @@ export default function SignUpModal() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ gap: tokens.spacing.xxs, alignItems: "center" }}>
-          <Text
-            style={{
-              color: colors.onBackground,
-              fontSize: tokens.typography.sizes["2xl"],
-              fontWeight: "700",
-            }}
+          <H2
+            weight="bold"
+            align="center"
+            style={{ fontSize: tokens.typography.sizes["2xl"] }}
           >
             Create account
-          </Text>
+          </H2>
         </View>
-
-        {!!error && (
-          <View
-            style={{
-              backgroundColor: colors.errorContainer,
-              borderColor: colors.error,
-              borderWidth: 1,
-              borderRadius: tokens.radii.lg,
-              paddingVertical: tokens.spacing.sm,
-              paddingHorizontal: tokens.spacing.md,
-            }}
-          >
-            <Text style={{ color: colors.onErrorContainer, fontWeight: "600" }}>
-              {error}
-            </Text>
-          </View>
-        )}
 
         <Animated.View style={{ transform: [{ translateX: shake }] }}>
           <View style={{ gap: tokens.spacing.md }}>
@@ -181,19 +164,53 @@ export default function SignUpModal() {
               value={username}
               onChangeText={(t) => {
                 setUsername(t);
-                if (fieldErr.user)
-                  setFieldErr((e) => ({ ...e, user: undefined }));
+                if (fieldErr.username)
+                  setFieldErr((e) => ({ ...e, username: undefined }));
               }}
               autoCapitalize="none"
               returnKeyType="next"
-              onSubmitEditing={() => passRef.current?.focus()}
-              error={!!fieldErr.user}
-              ref={userRef}
+              onSubmitEditing={() => emailRef.current?.focus()}
+              error={!!fieldErr.username}
+              ref={usernameRef}
             />
-            {fieldErr.user ? (
-              <Text style={{ color: colors.error, marginTop: -8 }}>
-                {fieldErr.user}
-              </Text>
+            {fieldErr.username ? (
+              <BodySmall
+                style={{
+                  color: colors.error,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
+                {fieldErr.username}
+              </BodySmall>
+            ) : null}
+
+            <TextInput
+              mode="outlined"
+              label="Email"
+              value={email}
+              onChangeText={(t) => {
+                setEmail(t);
+                if (fieldErr.email)
+                  setFieldErr((e) => ({ ...e, email: undefined }));
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              returnKeyType="next"
+              onSubmitEditing={() => passRef.current?.focus()}
+              error={!!fieldErr.email}
+              ref={emailRef}
+            />
+            {fieldErr.email ? (
+              <BodySmall
+                style={{
+                  color: colors.error,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
+                {fieldErr.email}
+              </BodySmall>
             ) : null}
 
             <TextInput
@@ -221,9 +238,15 @@ export default function SignUpModal() {
               }
             />
             {fieldErr.pass ? (
-              <Text style={{ color: colors.error, marginTop: -8 }}>
+              <BodySmall
+                style={{
+                  color: colors.error,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
                 {fieldErr.pass}
-              </Text>
+              </BodySmall>
             ) : null}
 
             <TextInput
@@ -249,13 +272,25 @@ export default function SignUpModal() {
               }
             />
             {fieldErr.conf ? (
-              <Text style={{ color: colors.error, marginTop: -8 }}>
+              <BodySmall
+                style={{
+                  color: colors.error,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
                 {fieldErr.conf}
-              </Text>
+              </BodySmall>
             ) : confirm && !mismatch ? (
-              <Text style={{ color: colors.tertiary, marginTop: -8 }}>
+              <BodySmall
+                style={{
+                  color: colors.tertiary,
+                  marginTop: -8,
+                  fontSize: tokens.typography.sizes.xs,
+                }}
+              >
                 Passwords match
-              </Text>
+              </BodySmall>
             ) : null}
           </View>
         </Animated.View>
