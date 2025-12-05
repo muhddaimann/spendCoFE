@@ -1,52 +1,175 @@
 import React from "react";
 import { ScrollView, View } from "react-native";
-import { useTheme, Card, ProgressBar } from "react-native-paper";
+import { useTheme, Card } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../../contexts/designContext";
-import { H1, H2, Body, Subtitle } from "../../../components/atom/text";
+import { useAuth } from "../../../contexts/authContext";
+import { useRouter } from "expo-router";
+import { H1, Subtitle, Body, BodySmall } from "../../../components/atom/text";
+import { Button } from "../../../components/atom/button";
+import { Wallet, PieChart, ListChecks } from "lucide-react-native";
 
-const dummyData = {
-  monthlyBudget: 2000,
-  spent: 1500,
-  categories: [
-    { name: "Food", spent: 600, budget: 800, color: "#FF6347" },
-    { name: "Transport", spent: 300, budget: 400, color: "#4682B4" },
-    { name: "Bills", spent: 400, budget: 500, color: "#3CB371" },
-    { name: "Fun", spent: 200, budget: 300, color: "#FFD700" },
-  ],
-};
-
-export default function Dashboard() {
+export default function Home() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const router = useRouter();
 
-  const spentPercentage = (dummyData.spent / dummyData.monthlyBudget) * 100;
+  const name = user?.username || "there";
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ padding: tokens.spacing.md, gap: tokens.spacing.lg }}>
-        <H1>Dashboard</H1>
-        
-        <Card>
-          <Card.Content>
-            <Subtitle>Monthly Overview</Subtitle>
-            <H2>RM {dummyData.spent.toFixed(2)} / RM {dummyData.monthlyBudget.toFixed(2)}</H2>
-            <ProgressBar progress={spentPercentage / 100} color={colors.primary} style={{ marginTop: tokens.spacing.sm }} />
-          </Card.Content>
-        </Card>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{
+        paddingTop: tokens.spacing.lg,
+        paddingBottom: insets.bottom + tokens.spacing.xl * 5,
+        paddingHorizontal: tokens.spacing.lg,
+        gap: tokens.spacing.lg,
+      }}
+      bounces={false}
+    >
+      <View style={{ gap: tokens.spacing.xs }}>
+        <BodySmall muted>Welcome, {name}</BodySmall>
+        <H1 weight="bold">Let’s set up SpendCo</H1>
+        <Body muted>
+          Start by adding your first spending and organising it into simple
+          categories. This Home tab will become your money overview.
+        </Body>
+      </View>
 
-        <H2>Categories</H2>
+      <Card
+        style={{
+          borderRadius: tokens.radii.lg,
+          backgroundColor: colors.surface,
+        }}
+      >
+        <Card.Content
+          style={{
+            paddingVertical: tokens.spacing.lg,
+            gap: tokens.spacing.md,
+          }}
+        >
+          <View style={{ gap: tokens.spacing.xs }}>
+            <Subtitle weight="semibold">
+              You haven’t tracked anything yet
+            </Subtitle>
+            <Body muted>
+              Once you add some spending, you’ll see totals, trends, and
+              category breakdowns here.
+            </Body>
+          </View>
 
-        {dummyData.categories.map((category, index) => (
-          <Card key={index}>
-            <Card.Content>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Body>{category.name}</Body>
-                <Body>RM {category.spent.toFixed(2)} / RM {category.budget.toFixed(2)}</Body>
-              </View>
-              <ProgressBar progress={category.spent / category.budget} color={category.color} style={{ marginTop: tokens.spacing.sm }} />
-            </Card.Content>
-          </Card>
-        ))}
+          <Button
+            variant="default"
+            rounded="pill"
+            fullWidth
+            onPress={() => router.push("(tabs)/a/spendingPage")}
+          >
+            Check Your spending
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <Card
+        style={{
+          borderRadius: tokens.radii.lg,
+          backgroundColor: colors.surface,
+        }}
+      >
+        <Card.Content style={{ gap: tokens.spacing.md }}>
+          <Subtitle weight="semibold">How SpendCo works</Subtitle>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: tokens.spacing.md,
+              alignItems: "flex-start",
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: tokens.radii.full,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.primaryContainer,
+              }}
+            >
+              <Wallet color={colors.onPrimaryContainer} size={20} />
+            </View>
+            <View style={{ flex: 1, gap: tokens.spacing.xxs }}>
+              <Body weight="semibold">Track spending quickly</Body>
+              <BodySmall muted>
+                Log each expense with an amount, category, and note so you
+                always know where your money goes.
+              </BodySmall>
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: tokens.spacing.md,
+              alignItems: "flex-start",
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: tokens.radii.full,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.secondaryContainer,
+              }}
+            >
+              <ListChecks color={colors.onSecondaryContainer} size={20} />
+            </View>
+            <View style={{ flex: 1, gap: tokens.spacing.xxs }}>
+              <Body weight="semibold">Group by categories</Body>
+              <BodySmall muted>
+                Keep it simple with a few categories first: food, transport,
+                bills, fun, or whatever fits your life.
+              </BodySmall>
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: tokens.spacing.md,
+              alignItems: "flex-start",
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: tokens.radii.full,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.tertiaryContainer,
+              }}
+            >
+              <PieChart color={colors.onTertiaryContainer} size={20} />
+            </View>
+            <View style={{ flex: 1, gap: tokens.spacing.xxs }}>
+              <Body weight="semibold">See your month at a glance</Body>
+              <BodySmall muted>
+                After a few entries, this Home screen will show how much you’ve
+                spent and where it’s going.
+              </BodySmall>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+
+      <View style={{ alignItems: "center", marginTop: tokens.spacing.sm }}>
+        <BodySmall muted align="center">
+          Tip: You can always add spending from the + button in the bottom bar.
+        </BodySmall>
       </View>
     </ScrollView>
   );

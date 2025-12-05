@@ -39,9 +39,9 @@ export function CustomTabBar({
     children,
     backgroundColor,
     disabled,
-    horizontalPadding = tokens.spacing.lg,
-    top = tokens.spacing.lg,
-    bottom = tokens.spacing.lg,
+    horizontalPadding = tokens.spacing.md,
+    top = tokens.spacing.sm,
+    bottom = tokens.spacing.sm,
     shadow = true,
     borderColor,
   }: PillButtonProps) => (
@@ -57,14 +57,14 @@ export function CustomTabBar({
         paddingBottom: bottom,
         flexDirection: "row",
         alignItems: "center",
-        borderWidth: 0.8,
+        borderWidth: 0.6,
         borderColor: borderColor ?? colors.outlineVariant,
         ...(shadow && {
           shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.16,
-          shadowRadius: 6,
-          elevation: 6,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 4,
+          elevation: 4,
         }),
       }}
     >
@@ -91,7 +91,7 @@ export function CustomTabBar({
 
   const handleActionPress = async () => {
     if (isHome) {
-      router.push("/addSpending");
+      router.push("(tabs)/a/addSpending");
       return;
     }
     if (!loading) {
@@ -108,9 +108,9 @@ export function CustomTabBar({
     <View
       style={{
         position: "absolute",
-        bottom: insets.bottom + tokens.spacing.sm,
-        left: tokens.spacing.lg,
-        right: tokens.spacing.lg,
+        bottom: insets.bottom + tokens.spacing.xs,
+        left: tokens.spacing.xl,
+        right: tokens.spacing.xl,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -121,13 +121,12 @@ export function CustomTabBar({
         borderColor={colors.outlineVariant}
         onPress={undefined}
         horizontalPadding={tokens.spacing.lg}
-        top={tokens.spacing.sm}
         bottom={tokens.spacing.xs}
       >
         <View
           style={{
             flexDirection: "row",
-            alignItems: "stretch",
+            alignItems: "center",
             gap: tokens.spacing.lg,
           }}
         >
@@ -167,16 +166,16 @@ export function CustomTabBar({
                   alignItems: "center",
                   justifyContent: "center",
                   paddingHorizontal: tokens.spacing.sm,
-                  paddingVertical: tokens.spacing.xs,
-                  minWidth: 80,
+                  paddingVertical: tokens.spacing["xxs"],
+                  minWidth: 68,
                 }}
               >
-                {Icon && <Icon color={iconColor} size={28} />}
+                {Icon && <Icon color={iconColor} size={tokens.sizes.icon.lg} />}
                 <BodySmall
                   weight={isFocused ? "semibold" : "reg"}
                   style={{
-                    marginTop: tokens.spacing.xxs,
-                    fontSize: tokens.typography.sizes.md,
+                    marginTop: tokens.spacing["xxs"],
+                    fontSize: tokens.typography.sizes.sm,
                     color: textColor,
                   }}
                 >
@@ -184,8 +183,8 @@ export function CustomTabBar({
                 </BodySmall>
                 <View
                   style={{
-                    marginTop: tokens.spacing.xxs,
-                    height: 4,
+                    marginTop: tokens.spacing["xxs"],
+                    height: 2,
                     borderRadius: 999,
                     alignSelf: "stretch",
                     backgroundColor: underlineColor,
@@ -202,8 +201,11 @@ export function CustomTabBar({
         disabled={!isHome && loading}
         backgroundColor={actionBg}
         borderColor={actionBorder}
+        horizontalPadding={tokens.spacing.lg}
+        top={tokens.spacing.lg}
+        bottom={tokens.spacing.lg}
       >
-        <ActionIcon size={tokens.sizes.icon.xl} color={actionIconColor} />
+        <ActionIcon size={tokens.sizes.icon.lg} color={actionIconColor} />
       </PillButton>
     </View>
   );

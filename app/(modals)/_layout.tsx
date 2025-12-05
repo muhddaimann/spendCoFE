@@ -2,7 +2,6 @@ import React from "react";
 import { Stack } from "expo-router";
 
 export default function ModalLayout() {
-
   return (
     <Stack
       screenOptions={{
@@ -13,9 +12,18 @@ export default function ModalLayout() {
         gestureEnabled: true,
       }}
     >
-      <Stack.Screen name="signIn" />
-      <Stack.Screen name="signUp" />
-      <Stack.Screen name="forgot" />
+      <Stack.Screen
+        name="signIn"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="signUp"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="forgot"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }
