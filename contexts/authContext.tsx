@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast, confirm } = useOverlay();
+  const { toast, destructiveConfirm } = useOverlay();
 
   useEffect(() => {
     if (!tokenBootstrapped) return;
@@ -168,12 +168,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    const ok = await confirm({
+    const ok = await destructiveConfirm({
       title: "Sign out?",
       message: "You’ll be logged out from this device.",
       okText: "Sign out",
       cancelText: "Cancel",
-      variant: "warning",
     });
     if (!ok) return;
 
@@ -186,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     toast({ message: "Signed out", variant: "info" });
     router.replace("/goodbye");
-  }, [confirm, toast, setToken]);
+  }, [destructiveConfirm, toast, setToken]);
 
   const value = useMemo(
     () => ({

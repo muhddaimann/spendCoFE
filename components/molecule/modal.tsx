@@ -1,9 +1,10 @@
 import React from "react";
-import { View, Animated, Easing, Pressable } from "react-native";
+import { View, Animated, Easing, Pressable, Platform } from "react-native";
 import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import type { ModalOptions } from "../../contexts/overlayContext";
+import { BlurView } from "expo-blur";
 
 const DURATION = 240;
 
@@ -16,7 +17,7 @@ export function ModalSheet({
   state: ModalOptions | null;
   onDismiss: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
 
@@ -70,10 +71,31 @@ export function ModalSheet({
       style={{ position: "absolute", inset: 0, justifyContent: "flex-end" }}
     >
       <Animated.View style={{ position: "absolute", inset: 0, opacity }}>
-        <Pressable
-          onPress={canDismiss ? onDismiss : undefined}
-          style={{ flex: 1, backgroundColor: "#00000088" }}
-        />
+        {Platform.OS === "ios" || Platform.OS === "web" ? (
+          <>
+            <BlurView
+              intensity={30}
+              tint={dark ? "dark" : "light"}
+              style={{ position: "absolute", inset: 0 }}
+            />
+            <Pressable
+              onPress={canDismiss ? onDismiss : undefined}
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: dark ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.18)",
+              }}
+            />
+          </>
+        ) : (
+          <Pressable
+            onPress={canDismiss ? onDismiss : undefined}
+            style={{
+              flex: 1,
+              backgroundColor: dark ? "rgba(0,0,0,0.40)" : "rgba(0,0,0,0.22)",
+            }}
+          />
+        )}
       </Animated.View>
 
       <Animated.View style={{ transform: [{ translateY }] }}>

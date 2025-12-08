@@ -13,13 +13,14 @@ import { ConfirmDialog } from "../components/molecule/confirm";
 import { ToastBar } from "../components/molecule/toast";
 import { ModalSheet } from "../components/molecule/modal";
 import { AuthProvider, useAuth } from "../contexts/authContext";
+import { OptionsCenter } from "../components/molecule/options";
 import {
   useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from "@expo-google-fonts/poppins";
 import { TokenStorageProvider } from "../contexts/tokenStorage";
 
 SplashScreen.preventAutoHideAsync().catch(() => null);
@@ -33,7 +34,7 @@ function AppShell() {
     if (!bootstrapped || initialNavDone.current) return;
 
     if (isAuthenticated) {
-      router.replace("/welcome");
+      router.replace("/(tabs)/a");
     } else {
       router.replace("/");
     }
@@ -56,7 +57,8 @@ function AppShell() {
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(modals)" options={{ presentation: "modal" }} />
+          <Stack.Screen name="(modals)/addSpending" options={{ presentation: "modal" }} />
+          <Stack.Screen name="(modals)/updateBudget" options={{ presentation: "modal" }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
       </View>
@@ -66,10 +68,10 @@ function AppShell() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   useEffect(() => {
@@ -94,6 +96,7 @@ export default function RootLayout() {
               ConfirmUI={ConfirmDialog}
               ToastUI={ToastBar}
               ModalUI={ModalSheet}
+              OptionsUI={OptionsCenter}
             >
               <TokenStorageProvider>
                 <AuthProvider>

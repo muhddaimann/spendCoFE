@@ -5,6 +5,7 @@ import {
   type ToastOptions,
   type ModalOptions,
   type ConfirmOptions,
+  type OptionsOverlayOptions,
 } from "../contexts/overlayContext";
 
 export function useOverlay() {
@@ -17,20 +18,34 @@ export function useToast(): (opts: ToastOptions | string) => void {
   return useOverlay().toast;
 }
 
-export function useAlert(): { alert: (opts: AlertOptions) => void; dismissAlert: () => void } {
+export function useAlert(): {
+  alert: (opts: AlertOptions) => void;
+  dismissAlert: () => void;
+} {
   const { alert, dismissAlert } = useOverlay();
   return { alert, dismissAlert };
 }
 
-export function useModal(): { modal: (opts: ModalOptions) => void; dismissModal: () => void } {
+export function useModal(): {
+  modal: (opts: ModalOptions) => void;
+  dismissModal: () => void;
+} {
   const { modal, dismissModal } = useOverlay();
   return { modal, dismissModal };
 }
 
-export function useConfirm(): (opts: ConfirmOptions) => Promise<boolean> {
-  return useOverlay().confirm;
+export function useConfirm(): {
+  confirm: (opts: ConfirmOptions) => Promise<boolean>;
+  destructiveConfirm: (opts: ConfirmOptions) => Promise<boolean>;
+} {
+  const { confirm, destructiveConfirm } = useOverlay();
+  return { confirm, destructiveConfirm };
 }
 
-export function useDestructiveConfirm(): (opts: ConfirmOptions) => Promise<boolean> {
-  return useOverlay().destructiveConfirm;
+export function useOptions(): {
+  options: (opts: OptionsOverlayOptions) => void;
+  dismissOptions: () => void;
+} {
+  const { options, dismissOptions } = useOverlay();
+  return { options, dismissOptions };
 }

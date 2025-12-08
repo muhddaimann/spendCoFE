@@ -42,7 +42,7 @@ const DUMMY_BUDGETS: BudgetItem[] = [
   },
 ];
 
-type FilterKey = "all" | "month" | "week";
+type FilterKey = "all" | "month" | "week" | "today" ;
 
 export default function BudgetPage() {
   const { colors } = useTheme();
@@ -78,8 +78,9 @@ export default function BudgetPage() {
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: "all", label: "All" },
-    { key: "month", label: "This month" },
+    { key: "today", label: "Today" },
     { key: "week", label: "This week" },
+    { key: "month", label: "This month" },
   ];
 
   const burgerRightSlot = (
@@ -175,9 +176,7 @@ export default function BudgetPage() {
 
             <View style={{ alignItems: "flex-end", gap: 2 }}>
               <BodySmall muted>Remaining</BodySmall>
-              <Body weight="semibold">
-                RM {totalRemaining.toFixed(2)}
-              </Body>
+              <Body weight="semibold">RM {totalRemaining.toFixed(2)}</Body>
             </View>
           </View>
 

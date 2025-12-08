@@ -5,6 +5,8 @@ import { Button } from "../../components/atom/button";
 import { useDesign } from "../../contexts/designContext";
 import type { AlertOptions } from "../../contexts/overlayContext";
 
+import { BlurView } from "expo-blur";
+
 export function AlertDialog({
   visible,
   state,
@@ -14,7 +16,7 @@ export function AlertDialog({
   state: AlertOptions | null;
   onDismiss: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
   const { tokens } = useDesign();
   if (!visible || !state) return null;
 
@@ -38,10 +40,31 @@ export function AlertDialog({
       accessible
       accessibilityRole="alert"
     >
-      <Pressable
-        onPress={onDismiss}
-        style={{ position: "absolute", inset: 0, backgroundColor: "#00000088" }}
-      />
+      {Platform.OS === "ios" || Platform.OS === "web" ? (
+        <>
+          <BlurView
+            intensity={30}
+            tint={dark ? "dark" : "light"}
+            style={{ position: "absolute", inset: 0 }}
+          />
+          <Pressable
+            onPress={onDismiss}
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: dark ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.18)",
+            }}
+          />
+        </>
+      ) : (
+        <Pressable
+          onPress={onDismiss}
+          style={{
+            flex: 1,
+            backgroundColor: dark ? "rgba(0,0,0,0.40)" : "rgba(0,0,0,0.22)",
+          }}
+        />
+      )}
 
       <View
         style={{

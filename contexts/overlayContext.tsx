@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import type { LucideIcon } from "lucide-react-native";
 
 export type AlertAction = {
   text: string;
@@ -33,6 +34,20 @@ export type ToastOptions = {
   onAction?: () => void;
   variant?: Variant;
 };
+export type OptionItem = {
+  id?: string;
+  label: string;
+  icon?: LucideIcon;
+  onPress?: () => void;
+};
+
+export type OptionsOverlayOptions = {
+  title?: string;
+  message?: string;
+  options: OptionItem[];
+  dismissible?: boolean;
+};
+
 export type ModalOptions = { content: React.ReactNode; dismissible?: boolean };
 
 export type OverlayAPI = {
@@ -44,8 +59,12 @@ export type OverlayAPI = {
   dismissConfirm: () => void;
 
   toast: (opts: ToastOptions | string) => void;
+
   modal: (opts: ModalOptions) => void;
   dismissModal: () => void;
+
+  options: (opts: OptionsOverlayOptions) => void;
+  dismissOptions: () => void;
 };
 
 export const OverlayContext = createContext<OverlayAPI | null>(null);
@@ -56,6 +75,7 @@ export function OverlayProvider({
   ConfirmUI,
   ToastUI,
   ModalUI,
+  OptionsUI,
 }: {
   children: React.ReactNode;
   AlertUI: React.FC<{
@@ -79,6 +99,12 @@ export function OverlayProvider({
     state: ModalOptions | null;
     onDismiss: () => void;
   }>;
+  OptionsUI: React.FC<{
+    visible: boolean;
+    state: OptionsOverlayOptions | null;
+    onSelect: (index: number) => void;
+    onDismiss: () => void;
+  }>;
 }) {
   // ALERT (single button)
   const [alertVisible, setAlertVisible] = useState(false);
@@ -97,7 +123,9 @@ export function OverlayProvider({
   const [modalVisible, setModalVisible] = useState(false);
   const [modalState, setModalState] = useState<ModalOptions | null>(null);
 
-  // --- API impls ---
+  const [optionsVisible, setOptionsVisible] = useState<boolean>(false);
+  const [optionsState, setOptionsState] =
+    useState<OptionsOverlayOptions | null>(null);
 
   // ALERT
   const alert = useCallback((opts: AlertOptions) => {
@@ -183,6 +211,26 @@ export function OverlayProvider({
     setModalState(null);
   }, []);
 
+  const options = useCallback((opts: OptionsOverlayOptions) => {
+    setOptionsState(opts);
+    setOptionsVisible(true);
+  }, []);
+
+  const dismissOptions = useCallback(() => {
+    setOptionsVisible(false);
+    setOptionsState(null);
+  }, []);
+
+  const onOptionSelect = useCallback(
+    (index: number) => {
+      const item = optionsState?.options[index];
+      setOptionsVisible(false);
+      setOptionsState(null);
+      item?.onPress?.();
+    },
+    [optionsState]
+  );
+
   const value = useMemo<OverlayAPI>(
     () => ({
       alert,
@@ -193,6 +241,8 @@ export function OverlayProvider({
       toast,
       modal,
       dismissModal,
+      options,
+      dismissOptions,
     }),
     [
       alert,
@@ -203,14 +253,14 @@ export function OverlayProvider({
       toast,
       modal,
       dismissModal,
+      options,
+      dismissOptions,
     ]
   );
 
   return (
     <OverlayContext.Provider value={value}>
       {children}
-
-      {/* Renderers */}
       <AlertUI
         visible={alertVisible}
         state={alertState}
@@ -231,6 +281,12 @@ export function OverlayProvider({
         visible={modalVisible}
         state={modalState}
         onDismiss={dismissModal}
+      />
+      <OptionsUI
+        visible={optionsVisible}
+        state={optionsState}
+        onSelect={onOptionSelect}
+        onDismiss={dismissOptions}
       />
     </OverlayContext.Provider>
   );

@@ -52,7 +52,7 @@ const DUMMY_SPENDINGS: SpendingItem[] = [
   },
 ];
 
-type FilterKey = "all" | "month" | "week";
+type FilterKey = "all" | "month" | "week" | "today";
 
 export default function SpendingPage() {
   const { colors } = useTheme();
@@ -88,8 +88,9 @@ export default function SpendingPage() {
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: "all", label: "All" },
-    { key: "month", label: "This month" },
+    { key: "today", label: "Today" },
     { key: "week", label: "This week" },
+    { key: "month", label: "This month" },
   ];
 
   const burgerRightSlot = (

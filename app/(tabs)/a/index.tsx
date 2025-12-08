@@ -1,5 +1,11 @@
 import React from "react";
-import { ScrollView, View, TouchableOpacity } from "react-native";
+import {
+  ScrollView,
+  View,
+  TouchableOpacity,
+  NativeSyntheticEvent,
+} from "react-native";
+import { NativeScrollEvent } from "react-native";
 import { useTheme, Card } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../../contexts/designContext";
@@ -13,6 +19,9 @@ import {
   ChevronRight,
 } from "lucide-react-native";
 import { HomeHeader } from "../../../components/shared/homeHeader";
+import { useTabsUi } from "../../../contexts/tabContext";
+
+const HOME_ROUTE_KEY = "a";
 
 export default function Home() {
   const { colors } = useTheme();
@@ -21,6 +30,20 @@ export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
   const name = user?.username || "there";
+  const { updateByOffset, saveOffset, setActiveRoute } = useTabsUi();
+
+  React.useEffect(() => {
+    setActiveRoute(HOME_ROUTE_KEY);
+  }, [setActiveRoute]);
+
+  const handleScroll = React.useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      updateByOffset(y);
+      saveOffset(HOME_ROUTE_KEY, y);
+    },
+    [updateByOffset, saveOffset]
+  );
 
   return (
     <ScrollView
@@ -32,6 +55,8 @@ export default function Home() {
         gap: tokens.spacing.md,
       }}
       showsVerticalScrollIndicator={false}
+      scrollEventThrottle={16}
+      onScroll={handleScroll}
     >
       <HomeHeader name={name} />
 

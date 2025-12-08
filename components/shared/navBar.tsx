@@ -1,3 +1,7 @@
+import { Plus, LogOut, DollarSign, Wallet } from "lucide-react-native";
+import { useAuth } from "../../contexts/authContext";
+import { useTabsUi } from "../../contexts/tabContext";
+import { useOptions } from "../../hooks/useOverlay";
 import React from "react";
 import { View, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,9 +10,6 @@ import { useRouter } from "expo-router";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useDesign } from "../../contexts/designContext";
 import { BodySmall } from "../atom/text";
-import { Plus, LogOut } from "lucide-react-native";
-import { useAuth } from "../../contexts/authContext";
-import { useTabsUi } from "../../contexts/tabContext";
 
 type PillButtonProps = {
   onPress?: () => void;
@@ -33,7 +34,7 @@ export function CustomTabBar({
   const router = useRouter();
   const { signOut, loading } = useAuth();
   const { opacity, scale, mode } = useTabsUi();
-
+  const { options } = useOptions();
   const activeRoute = state.routes[state.index];
   const isHome = activeRoute.name === "a";
 
@@ -94,9 +95,24 @@ export function CustomTabBar({
 
   const handleActionPress = async () => {
     if (isHome) {
-      router.push("(tabs)/a/addSpending");
+      options({
+        title: "What do you want to do?",
+        options: [
+          {
+            label: "Add Spending",
+            icon: DollarSign, // Pass the component directly
+            onPress: () => router.push("/addSpending"),
+          },
+          {
+            label: "Update Budget",
+            icon: Wallet, // Pass the component directly
+            onPress: () => router.push("/updateBudget"), // Corrected route
+          },
+        ],
+      });
       return;
     }
+
     if (!loading) {
       await signOut();
     }
