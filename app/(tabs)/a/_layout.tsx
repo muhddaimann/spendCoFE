@@ -11,6 +11,8 @@ export default function ALayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="addSpending" />
       <Stack.Screen name="spendingPage" />
+      <Stack.Screen name="addBudget" />
+      <Stack.Screen name="budgetPage" />
     </Stack>
   );
 }

@@ -4,7 +4,7 @@ import { useTheme, TextInput, Divider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useDesign } from "../../../contexts/designContext";
-import { H2, Body, BodySmall } from "../../../components/atom/text";
+import { H2, BodySmall } from "../../../components/atom/text";
 import { Button } from "../../../components/atom/button";
 import { useOverlay } from "../../../hooks/useOverlay";
 import { useTabsUi } from "../../../contexts/tabContext";
@@ -20,19 +20,30 @@ const CATEGORIES: { key: CategoryKey; label: string }[] = [
   { key: "other", label: "Other" },
 ];
 
-export default function AddSpending() {
+type Mode = "add" | "edit";
+
+type BudgetFormProps = {
+  mode?: Mode;
+  initialName?: string;
+  initialAmount?: string;
+  initialCategory?: CategoryKey;
+  initialNote?: string;
+};
+
+export default function AddBudget({
+  mode = "add",
+  initialName = "",
+  initialAmount = "",
+  initialCategory = "food",
+  initialNote = "",
+}: BudgetFormProps) {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { toast } = useOverlay();
-  const [amount, setAmount] = useState("");
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<CategoryKey>("food");
-  const [wallet, setWallet] = useState("");
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
   const { lockHidden, unlockHidden } = useTabsUi();
+
   useFocusEffect(
     React.useCallback(() => {
       lockHidden();
@@ -42,15 +53,16 @@ export default function AddSpending() {
     }, [lockHidden, unlockHidden])
   );
 
+  const [name, setName] = useState(initialName);
+  const [amount, setAmount] = useState(initialAmount);
+  const [category, setCategory] = useState<CategoryKey>(initialCategory);
+  const [note, setNote] = useState(initialNote);
+  const [saving, setSaving] = useState(false);
+
   const isValid = useMemo(() => {
     const num = parseFloat(amount.replace(",", "."));
-    return (
-      title.trim().length > 0 &&
-      !Number.isNaN(num) &&
-      num > 0 &&
-      wallet.trim().length > 0
-    );
-  }, [amount, title, wallet]);
+    return name.trim().length > 0 && !Number.isNaN(num) && num > 0;
+  }, [amount, name]);
 
   const handleSave = async () => {
     if (!isValid || saving) return;
@@ -59,24 +71,23 @@ export default function AddSpending() {
     setSaving(true);
     try {
       const payload = {
-        amount: num,
-        title: title.trim(),
+        name: name.trim(),
+        limit: num,
         category,
-        wallet: wallet.trim(),
         note: note.trim() || undefined,
       };
 
-      // await apiCreateTransaction(payload);
+      // await apiCreateOrUpdateBudget(payload);
 
       toast({
-        message: "Spending saved",
+        message: mode === "add" ? "Budget saved" : "Budget updated",
         variant: "success",
       });
 
       router.back();
     } catch (e: any) {
       toast({
-        message: e?.message || "Failed to save spending",
+        message: e?.message || "Failed to save budget",
         variant: "error",
       });
     } finally {
@@ -98,11 +109,15 @@ export default function AddSpending() {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
-        <Header title="Spending" subtitle="Track your spending" />
+        <Header
+          title="Budget"
+          subtitle={mode === "add" ? "Create a new budget" : "Edit budget"}
+        />
+
         <View style={{ gap: tokens.spacing.xs }}>
-          <H2 weight="bold">Add spending</H2>
+          <H2 weight="bold">{mode === "add" ? "Add budget" : "Edit budget"}</H2>
           <BodySmall muted>
-            Log this purchase while it’s still fresh in your mind.
+            Set a simple limit so you know how much you can spend.
           </BodySmall>
         </View>
 
@@ -116,14 +131,12 @@ export default function AddSpending() {
             backgroundColor: colors.surface,
           }}
         >
-          <BodySmall muted>Amount</BodySmall>
+          <BodySmall muted>Budget name</BodySmall>
           <TextInput
             mode="outlined"
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            autoFocus
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. Food & drinks, Transport"
           />
         </View>
 
@@ -137,12 +150,13 @@ export default function AddSpending() {
             backgroundColor: colors.surface,
           }}
         >
-          <BodySmall muted>What did you spend on?</BodySmall>
+          <BodySmall muted>Monthly limit (RM)</BodySmall>
           <TextInput
             mode="outlined"
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g. Lunch, e-hailing, phone bill"
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
           />
         </View>
 
@@ -166,10 +180,8 @@ export default function AddSpending() {
           >
             {CATEGORIES.map((c) => {
               const selected = c.key === category;
-              const bg = selected ? colors.primaryContainer : "transparent";
-              const fg = selected
-                ? colors.onPrimaryContainer
-                : colors.onSurfaceVariant;
+              const bg = selected ? colors.surfaceVariant : "transparent";
+              const fg = selected ? colors.onSurface : colors.onSurfaceVariant;
 
               return (
                 <View
@@ -199,25 +211,6 @@ export default function AddSpending() {
               );
             })}
           </View>
-        </View>
-
-        <View
-          style={{
-            gap: tokens.spacing.sm,
-            padding: tokens.spacing.md,
-            borderRadius: tokens.radii.lg,
-            borderWidth: 0.8,
-            borderColor: colors.outlineVariant,
-            backgroundColor: colors.surface,
-          }}
-        >
-          <BodySmall muted>Paid from</BodySmall>
-          <TextInput
-            mode="outlined"
-            value={wallet}
-            onChangeText={setWallet}
-            placeholder="e.g. Maybank card, cash, e-wallet"
-          />
         </View>
 
         <View
@@ -264,7 +257,13 @@ export default function AddSpending() {
             fullWidth
             disabled={!isValid || saving}
           >
-            {saving ? "Saving..." : "Save spending"}
+            {saving
+              ? mode === "add"
+                ? "Saving budget..."
+                : "Updating budget..."
+              : mode === "add"
+              ? "Save budget"
+              : "Update budget"}
           </Button>
         </View>
       </View>

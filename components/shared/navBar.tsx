@@ -8,6 +8,7 @@ import { useDesign } from "../../contexts/designContext";
 import { BodySmall } from "../atom/text";
 import { Plus, LogOut } from "lucide-react-native";
 import { useAuth } from "../../contexts/authContext";
+import { useTabsUi } from "../../contexts/tabContext";
 
 type PillButtonProps = {
   onPress?: () => void;
@@ -31,6 +32,8 @@ export function CustomTabBar({
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signOut, loading } = useAuth();
+  const { opacity, scale, mode } = useTabsUi();
+
   const activeRoute = state.routes[state.index];
   const isHome = activeRoute.name === "a";
 
@@ -104,6 +107,10 @@ export function CustomTabBar({
   const actionBorder = isHome ? colors.primaryContainer : colors.errorContainer;
   const actionIconColor = isHome ? colors.onPrimary : colors.onError;
 
+  if (mode === "hidden") {
+    return null;
+  }
+
   return (
     <View
       style={{
@@ -114,7 +121,10 @@ export function CustomTabBar({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+        opacity,
+        transform: [{ scale }],
       }}
+      pointerEvents={opacity === 0 ? "none" : "auto"}
     >
       <PillButton
         backgroundColor={colors.surface}

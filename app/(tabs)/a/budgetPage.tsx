@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, View, Pressable } from "react-native";
-import { useTheme, Chip, Divider, Card } from "react-native-paper";
+import { useTheme, Chip, Divider, Card, ProgressBar } from "react-native-paper";
 import { useDesign } from "../../../contexts/designContext";
 import { H2, Body, BodySmall } from "../../../components/atom/text";
 import { Header } from "../../../components/shared/header";
@@ -8,56 +8,47 @@ import { Menu } from "lucide-react-native";
 import { useTabsUi } from "../../../contexts/tabContext";
 import { useFocusEffect } from "expo-router";
 
-type SpendingItem = {
+type BudgetItem = {
   id: string;
-  date: string;
-  title: string;
-  category: string;
-  amount: number;
-  wallet: string;
+  name: string;
+  limit: number;
+  spent: number;
 };
 
-const DUMMY_SPENDINGS: SpendingItem[] = [
+const DUMMY_BUDGETS: BudgetItem[] = [
   {
     id: "1",
-    date: "2025-12-04",
-    title: "Breakfast nasi lemak",
-    category: "Food",
-    amount: 6.5,
-    wallet: "Cash",
+    name: "Food & drinks",
+    limit: 400,
+    spent: 120.5,
   },
   {
     id: "2",
-    date: "2025-12-04",
-    title: "MRT ride",
-    category: "Transport",
-    amount: 4.2,
-    wallet: "Touch 'n Go",
+    name: "Transport",
+    limit: 200,
+    spent: 60.2,
   },
   {
     id: "3",
-    date: "2025-12-03",
-    title: "GrabFood dinner",
-    category: "Food",
-    amount: 26.9,
-    wallet: "Debit card",
+    name: "Subscriptions",
+    limit: 80,
+    spent: 45.9,
   },
   {
     id: "4",
-    date: "2025-12-02",
-    title: "Spotify",
-    category: "Subscription",
-    amount: 15.9,
-    wallet: "Credit card",
+    name: "Fun",
+    limit: 300,
+    spent: 0,
   },
 ];
 
 type FilterKey = "all" | "month" | "week";
 
-export default function SpendingPage() {
+export default function BudgetPage() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const { lockHidden, unlockHidden } = useTabsUi();
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   useFocusEffect(
     React.useCallback(() => {
@@ -67,24 +58,23 @@ export default function SpendingPage() {
       };
     }, [lockHidden, unlockHidden])
   );
-  const [filter, setFilter] = useState<FilterKey>("all");
 
   const filtered = useMemo(() => {
-    return DUMMY_SPENDINGS;
+    return DUMMY_BUDGETS;
   }, [filter]);
 
-  const grouped = useMemo(() => {
-    return filtered.reduce<Record<string, SpendingItem[]>>((acc, item) => {
-      if (!acc[item.date]) acc[item.date] = [];
-      acc[item.date].push(item);
-      return acc;
-    }, {});
-  }, [filtered]);
-
-  const total = useMemo(
-    () => filtered.reduce((sum, s) => sum + s.amount, 0),
+  const totalLimit = useMemo(
+    () => filtered.reduce((sum, b) => sum + b.limit, 0),
     [filtered]
   );
+
+  const totalSpent = useMemo(
+    () => filtered.reduce((sum, b) => sum + b.spent, 0),
+    [filtered]
+  );
+
+  const totalRemaining = Math.max(totalLimit - totalSpent, 0);
+  const overallProgress = totalLimit > 0 ? totalSpent / totalLimit : 0;
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: "all", label: "All" },
@@ -121,8 +111,8 @@ export default function SpendingPage() {
       }}
     >
       <Header
-        title="Spending"
-        subtitle="Track your spending"
+        title="Budget"
+        subtitle="Plan where your money goes"
         rightSlot={burgerRightSlot}
       />
 
@@ -168,18 +158,51 @@ export default function SpendingPage() {
       >
         <Card.Content
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
+            gap: tokens.spacing.sm,
           }}
         >
-          <View style={{ gap: 2 }}>
-            <BodySmall muted>Total spent (filtered)</BodySmall>
-            <H2 weight="bold">RM {total.toFixed(2)}</H2>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ gap: 2 }}>
+              <BodySmall muted>Total budget (filtered)</BodySmall>
+              <H2 weight="bold">RM {totalLimit.toFixed(2)}</H2>
+            </View>
+
+            <View style={{ alignItems: "flex-end", gap: 2 }}>
+              <BodySmall muted>Remaining</BodySmall>
+              <Body weight="semibold">
+                RM {totalRemaining.toFixed(2)}
+              </Body>
+            </View>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <BodySmall muted>Transactions</BodySmall>
-            <Body>{filtered.length}</Body>
+
+          <ProgressBar
+            progress={overallProgress}
+            color={colors.primary}
+            style={{
+              height: 6,
+              borderRadius: 999,
+              backgroundColor: colors.surfaceVariant,
+            }}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <BodySmall muted>Spent: RM {totalSpent.toFixed(2)}</BodySmall>
+            <BodySmall muted>
+              {totalLimit > 0
+                ? `${Math.round(overallProgress * 100)}% used`
+                : "No budget set"}
+            </BodySmall>
           </View>
         </Card.Content>
       </Card>
@@ -187,45 +210,58 @@ export default function SpendingPage() {
       <Divider />
 
       <View style={{ gap: tokens.spacing.md }}>
-        {Object.entries(grouped).map(([date, items]) => (
-          <View key={date} style={{ gap: tokens.spacing.xs }}>
-            <BodySmall muted>{date}</BodySmall>
-            {items.map((item) => (
-              <Card
-                key={item.id}
+        {filtered.map((item) => {
+          const remaining = Math.max(item.limit - item.spent, 0);
+          const progress = item.limit > 0 ? item.spent / item.limit : 0;
+
+          return (
+            <Card
+              key={item.id}
+              style={{
+                borderRadius: tokens.radii.lg,
+                borderWidth: 0.6,
+                borderColor: colors.outlineVariant,
+              }}
+            >
+              <Card.Content
                 style={{
-                  borderRadius: tokens.radii.lg,
-                  borderWidth: 0.6,
-                  borderColor: colors.outlineVariant,
+                  gap: tokens.spacing.sm,
                 }}
               >
-                <Card.Content
+                <View
                   style={{
                     flexDirection: "row",
-                    alignItems: "center",
                     justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Body weight="semibold">{item.title}</Body>
+                    <Body weight="semibold">{item.name}</Body>
                     <BodySmall muted>
-                      {item.category} · {item.wallet}
+                      RM {item.spent.toFixed(2)} of RM {item.limit.toFixed(2)}
                     </BodySmall>
                   </View>
-                  <Body
+                  <BodySmall
                     weight="semibold"
-                    style={{
-                      color: colors.error,
-                      marginLeft: tokens.spacing.lg,
-                    }}
+                    style={{ color: colors.onSurfaceVariant }}
                   >
-                    - RM {item.amount.toFixed(2)}
-                  </Body>
-                </Card.Content>
-              </Card>
-            ))}
-          </View>
-        ))}
+                    RM {remaining.toFixed(2)} left
+                  </BodySmall>
+                </View>
+
+                <ProgressBar
+                  progress={progress}
+                  color={colors.primary}
+                  style={{
+                    height: 5,
+                    borderRadius: 999,
+                    backgroundColor: colors.surfaceVariant,
+                  }}
+                />
+              </Card.Content>
+            </Card>
+          );
+        })}
       </View>
     </ScrollView>
   );

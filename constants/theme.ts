@@ -20,25 +20,35 @@ const make = (
 });
 
 const fontConfig = {
-  displayLarge: make("ComicNeue_700Bold", "700", 57, 64),
-  displayMedium: make("ComicNeue_700Bold", "700", 45, 52),
-  displaySmall: make("ComicNeue_700Bold", "700", 36, 44),
+  displayLarge: make("Poppins_700Bold", "700", 57, 64),
 
-  headlineLarge: make("ComicNeue_700Bold", "700", 32, 40),
-  headlineMedium: make("ComicNeue_700Bold", "700", 28, 36),
-  headlineSmall: make("ComicNeue_700Bold", "700", 24, 32),
+  displayMedium: make("Poppins_700Bold", "700", 45, 52),
 
-  titleLarge: make("ComicNeue_700Bold", "700", 22, 28),
-  titleMedium: make("ComicNeue_700Bold", "700", 16, 24, 0.1),
-  titleSmall: make("ComicNeue_700Bold", "700", 14, 20, 0.1),
+  displaySmall: make("Poppins_700Bold", "700", 36, 44),
 
-  labelLarge: make("ComicNeue_700Bold", "700", 14, 20, 0.1),
-  labelMedium: make("ComicNeue_400Regular", "400", 12, 16, 0.5),
-  labelSmall: make("ComicNeue_400Regular", "400", 11, 16, 0.5),
+  headlineLarge: make("Poppins_700Bold", "700", 32, 40),
 
-  bodyLarge: make("ComicNeue_400Regular", "400", 16, 24),
-  bodyMedium: make("ComicNeue_400Regular", "400", 14, 20),
-  bodySmall: make("ComicNeue_400Regular", "400", 12, 16),
+  headlineMedium: make("Poppins_700Bold", "700", 28, 36),
+
+  headlineSmall: make("Poppins_700Bold", "700", 24, 32),
+
+  titleLarge: make("Poppins_700Bold", "700", 22, 28),
+
+  titleMedium: make("Poppins_700Bold", "700", 16, 24, 0.1),
+
+  titleSmall: make("Poppins_700Bold", "700", 14, 20, 0.1),
+
+  labelLarge: make("Poppins_700Bold", "700", 14, 20, 0.1),
+
+  labelMedium: make("Poppins_400Regular", "400", 12, 16, 0.5),
+
+  labelSmall: make("Poppins_400Regular", "400", 11, 16, 0.5),
+
+  bodyLarge: make("Poppins_400Regular", "400", 16, 24),
+
+  bodyMedium: make("Poppins_400Regular", "400", 14, 20),
+
+  bodySmall: make("Poppins_400Regular", "400", 12, 16),
 };
 
 const fonts = configureFonts({ config: fontConfig });
@@ -49,23 +59,23 @@ export const lightTheme: MD3Theme = {
   fonts,
   colors: {
     ...MD3LightTheme.colors,
-    primary: "#5B5F97",
-    onPrimary: "#FFFFFF",
-    primaryContainer: "#C7C9E9",
-    onPrimaryContainer: "#1C1E47",
-    secondary: "#A14F66",
-    onSecondary: "#FFFFFF",
-    secondaryContainer: "#E1B5C1",
-    onSecondaryContainer: "#3F1F29",
-    tertiary: "#2E7D88",
+    primary: "#345995",
+    onPrimary: "#F2F6FF",
+    primaryContainer: "#C7D6F5",
+    onPrimaryContainer: "#13294B",
+    secondary: "#FFA24C",
+    onSecondary: "#2A1400",
+    secondaryContainer: "#FFE0BF",
+    onSecondaryContainer: "#3A1E00",
+    tertiary: "#2F9E62",
     onTertiary: "#FFFFFF",
-    tertiaryContainer: "#A7DDE3",
-    onTertiaryContainer: "#08363B",
+    tertiaryContainer: "#CDEFD9",
+    onTertiaryContainer: "#0F3D24",
     error: "#BA1A1A",
     onError: "#FFFFFF",
     errorContainer: "#FFDAD6",
     onErrorContainer: "#410002",
-    background: "#FFFFFF",
+    background: "#F7F8FB",
     onBackground: "#1A1B1E",
     surface: "#FFFFFF",
     onSurface: "#1A1B1E",
@@ -75,7 +85,7 @@ export const lightTheme: MD3Theme = {
     outlineVariant: "#C9CADA",
     inverseSurface: "#2F3036",
     inverseOnSurface: "#F2F2F4",
-    inversePrimary: "#C7C9E9",
+    inversePrimary: "#B5C7F3",
     shadow: "#000000",
     scrim: "#000000",
     surfaceDisabled: "rgba(26,27,30,0.12)",
@@ -91,25 +101,29 @@ export const darkTheme: MD3Theme = {
   fonts,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: "#C7C9E9",
-    onPrimary: "#1C1E47",
-    primaryContainer: "#383B6D",
-    onPrimaryContainer: "#C7C9E9",
-    secondary: "#E1B5C1",
-    onSecondary: "#3F1F29",
-    secondaryContainer: "#5A2E3B",
-    onSecondaryContainer: "#F5D9E1",
-    tertiary: "#8ED2D8",
-    onTertiary: "#08363B",
-    tertiaryContainer: "#274F54",
-    onTertiaryContainer: "#A7DDE3",
+    primary: "#AFC4FF",
+    onPrimary: "#0A1C3A",
+    primaryContainer: "#1F3B78",
+    onPrimaryContainer: "#D9E3FF",
+
+    secondary: "#FFC38A",
+    onSecondary: "#3A1E00",
+    secondaryContainer: "#663A00",
+    onSecondaryContainer: "#FFD7A8",
+
+    tertiary: "#79D39B",
+    onTertiary: "#0B2A18",
+    tertiaryContainer: "#1A5A37",
+    onTertiaryContainer: "#BDECCF",
+
     error: "#FFB4AB",
     onError: "#690005",
     errorContainer: "#93000A",
     onErrorContainer: "#FFDAD6",
-    background: "#0B0B0F",
+
+    background: "#0A0B10",
     onBackground: "#E3E3E8",
-    surface: "#111115",
+    surface: "#111318",
     onSurface: "#E3E3E8",
     surfaceVariant: "#444654",
     onSurfaceVariant: "#C9CAD7",
@@ -117,7 +131,7 @@ export const darkTheme: MD3Theme = {
     outlineVariant: "#444654",
     inverseSurface: "#E3E3E8",
     inverseOnSurface: "#202126",
-    inversePrimary: "#5B5F97",
+    inversePrimary: "#345995",
     shadow: "#000000",
     scrim: "#000000",
     surfaceDisabled: "rgba(227,227,232,0.12)",

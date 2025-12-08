@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.1.199/spendCo";
+const BASE_URL = "http://192.168.100.9/spendCo";
 
 let authToken: string | null = null;
 
