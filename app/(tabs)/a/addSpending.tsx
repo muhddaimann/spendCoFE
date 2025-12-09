@@ -66,8 +66,6 @@ export default function AddSpending() {
         note: note.trim() || undefined,
       };
 
-      // await apiCreateTransaction(payload);
-
       toast({
         message: "Spending saved",
         variant: "success",
@@ -99,13 +97,6 @@ export default function AddSpending() {
         keyboardShouldPersistTaps="handled"
       >
         <Header title="Spending" subtitle="Track your spending" />
-        <View style={{ gap: tokens.spacing.xs }}>
-          <H2 weight="bold">Add spending</H2>
-          <BodySmall muted>
-            Log this purchase while it’s still fresh in your mind.
-          </BodySmall>
-        </View>
-
         <View
           style={{
             gap: tokens.spacing.sm,

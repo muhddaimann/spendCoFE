@@ -5,7 +5,7 @@ import {
   TextInput as RNInput,
   Animated,
   InteractionManager,
-} from "react-native";
+} from "react-native"; 
 import { useTheme, TextInput, Divider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
@@ -19,7 +19,6 @@ export default function SignUpModal() {
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
   const { signUp, loading, clearError } = useAuth();
-
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

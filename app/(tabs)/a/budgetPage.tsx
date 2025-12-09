@@ -1,10 +1,17 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, View, Pressable } from "react-native";
-import { useTheme, Chip, Divider, Card, ProgressBar } from "react-native-paper";
+import { ScrollView, View } from "react-native";
+import {
+  useTheme,
+  Chip,
+  Divider,
+  Card,
+  ProgressBar,
+  Switch,
+} from "react-native-paper";
 import { useDesign } from "../../../contexts/designContext";
 import { H2, Body, BodySmall } from "../../../components/atom/text";
 import { Header } from "../../../components/shared/header";
-import { Menu } from "lucide-react-native";
+import { Wallet } from "lucide-react-native";
 import { useTabsUi } from "../../../contexts/tabContext";
 import { useFocusEffect } from "expo-router";
 
@@ -42,13 +49,14 @@ const DUMMY_BUDGETS: BudgetItem[] = [
   },
 ];
 
-type FilterKey = "all" | "month" | "week" | "today" ;
+type FilterKey = "all" | "month" | "week" | "today";
 
 export default function BudgetPage() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const { lockHidden, unlockHidden } = useTabsUi();
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [showEmpty, setShowEmpty] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -60,8 +68,10 @@ export default function BudgetPage() {
   );
 
   const filtered = useMemo(() => {
+    if (showEmpty) return [];
+    // later you can actually filter by date; for now just return all
     return DUMMY_BUDGETS;
-  }, [filter]);
+  }, [filter, showEmpty]);
 
   const totalLimit = useMemo(
     () => filtered.reduce((sum, b) => sum + b.limit, 0),
@@ -83,23 +93,35 @@ export default function BudgetPage() {
     { key: "month", label: "This month" },
   ];
 
+  const emptyTitle: Record<FilterKey, string> = {
+    all: "No budgets yet",
+    today: "No budgets for today",
+    week: "No budgets for this week",
+    month: "No budgets for this month",
+  };
+
+  const emptySubtitle: Record<FilterKey, string> = {
+    all: "Create a simple monthly budget and your categories will appear here.",
+    today:
+      "No budget activity for today yet. When you start spending, progress will show here.",
+    week: "No budget usage this week. Track a few expenses to see how it moves.",
+    month:
+      "No budgets set for this month yet. Add one to start planning your spending.",
+  };
+
   const burgerRightSlot = (
-    <Pressable
-      hitSlop={tokens.spacing.xs}
-      onPress={() => {}}
-      style={{
-        width: tokens.spacing["2xl"],
-        height: tokens.spacing["2xl"],
-        borderRadius: tokens.spacing["2xl"] / 2,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.outlineVariant,
-      }}
-    >
-      <Menu size={tokens.sizes.icon.lg} color={colors.onSurface} />
-    </Pressable>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <BodySmall muted>Empty</BodySmall>
+      <Switch
+        value={showEmpty}
+        onValueChange={setShowEmpty}
+        thumbColor={colors.primary}
+        trackColor={{
+          false: colors.surfaceVariant,
+          true: colors.primaryContainer,
+        }}
+      />
+    </View>
   );
 
   return (
@@ -209,58 +231,109 @@ export default function BudgetPage() {
       <Divider />
 
       <View style={{ gap: tokens.spacing.md }}>
-        {filtered.map((item) => {
-          const remaining = Math.max(item.limit - item.spent, 0);
-          const progress = item.limit > 0 ? item.spent / item.limit : 0;
-
-          return (
-            <Card
-              key={item.id}
+        {filtered.length === 0 ? (
+          <Card
+            style={{
+              borderRadius: tokens.radii["2xl"],
+              backgroundColor: colors.surface,
+              borderWidth: 0.7,
+              borderColor: colors.outlineVariant,
+            }}
+          >
+            <Card.Content
               style={{
-                borderRadius: tokens.radii.lg,
-                borderWidth: 0.6,
-                borderColor: colors.outlineVariant,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: tokens.spacing.xl,
+                gap: tokens.spacing.md,
               }}
             >
-              <Card.Content
+              <View
                 style={{
-                  gap: tokens.spacing.sm,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: colors.surfaceVariant,
                 }}
               >
-                <View
+                <Wallet size={24} color={colors.onSurfaceVariant} />
+              </View>
+
+              <H2
+                weight="bold"
+                style={{ textAlign: "center", color: colors.onSurface }}
+              >
+                {emptyTitle[filter]}
+              </H2>
+
+              <BodySmall
+                muted
+                align="center"
+                style={{
+                  maxWidth: 260,
+                  color: colors.onSurfaceVariant,
+                }}
+              >
+                {emptySubtitle[filter]}
+              </BodySmall>
+            </Card.Content>
+          </Card>
+        ) : (
+          filtered.map((item) => {
+            const remaining = Math.max(item.limit - item.spent, 0);
+            const progress = item.limit > 0 ? item.spent / item.limit : 0;
+
+            return (
+              <Card
+                key={item.id}
+                style={{
+                  borderRadius: tokens.radii.lg,
+                  borderWidth: 0.6,
+                  borderColor: colors.outlineVariant,
+                }}
+              >
+                <Card.Content
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    gap: tokens.spacing.sm,
                   }}
                 >
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Body weight="semibold">{item.name}</Body>
-                    <BodySmall muted>
-                      RM {item.spent.toFixed(2)} of RM {item.limit.toFixed(2)}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Body weight="semibold">{item.name}</Body>
+                      <BodySmall muted>
+                        RM {item.spent.toFixed(2)} of RM {item.limit.toFixed(2)}
+                      </BodySmall>
+                    </View>
+                    <BodySmall
+                      weight="semibold"
+                      style={{ color: colors.onSurfaceVariant }}
+                    >
+                      RM {remaining.toFixed(2)} left
                     </BodySmall>
                   </View>
-                  <BodySmall
-                    weight="semibold"
-                    style={{ color: colors.onSurfaceVariant }}
-                  >
-                    RM {remaining.toFixed(2)} left
-                  </BodySmall>
-                </View>
 
-                <ProgressBar
-                  progress={progress}
-                  color={colors.primary}
-                  style={{
-                    height: 5,
-                    borderRadius: 999,
-                    backgroundColor: colors.surfaceVariant,
-                  }}
-                />
-              </Card.Content>
-            </Card>
-          );
-        })}
+                  <ProgressBar
+                    progress={progress}
+                    color={colors.primary}
+                    style={{
+                      height: 5,
+                      borderRadius: 999,
+                      backgroundColor: colors.surfaceVariant,
+                    }}
+                  />
+                </Card.Content>
+              </Card>
+            );
+          })
+        )}
       </View>
     </ScrollView>
   );

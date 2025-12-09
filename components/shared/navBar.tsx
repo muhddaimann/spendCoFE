@@ -1,4 +1,4 @@
-import { Plus, LogOut, DollarSign, Wallet } from "lucide-react-native";
+import { Plus, LogOut, DollarSign, Wallet, CatIcon } from "lucide-react-native";
 import { useAuth } from "../../contexts/authContext";
 import { useTabsUi } from "../../contexts/tabContext";
 import { useOptions } from "../../hooks/useOverlay";
@@ -100,13 +100,18 @@ export function CustomTabBar({
         options: [
           {
             label: "Add Spending",
-            icon: DollarSign, // Pass the component directly
-            onPress: () => router.push("/addSpending"),
+            icon: DollarSign,
+            onPress: () => router.push("/(tabs)/a/addSpending"),
           },
           {
             label: "Update Budget",
-            icon: Wallet, // Pass the component directly
-            onPress: () => router.push("/updateBudget"), // Corrected route
+            icon: Wallet,
+            onPress: () => router.push("/(tabs)/a/addBudget"),
+          },
+          {
+            label: "Manage Category",
+            icon: CatIcon,
+            onPress: () => router.push("/(tabs)/a/categoryPage"),
           },
         ],
       });

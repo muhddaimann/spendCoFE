@@ -1,69 +1,29 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, Pressable } from "react-native";
 import { useTheme, Chip, Divider, Card, Switch } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useDesign } from "../../../contexts/designContext";
 import { H2, Body, BodySmall } from "../../../components/atom/text";
 import { Header } from "../../../components/shared/header";
 import { useTabsUi } from "../../../contexts/tabContext";
-import { useFocusEffect } from "expo-router";
-import { ReceiptText } from "lucide-react-native";
+import { Tag } from "lucide-react-native";
 import { Button } from "../../../components/atom/button";
+import { useCategory, CATEGORY_ICONS } from "../../../hooks/useCategory";
+import { useConfirm } from "../../../hooks/useOverlay";
 
-type SpendingItem = {
-  id: string;
-  date: string;
-  title: string;
-  category: string;
-  amount: number;
-  wallet: string;
-};
+type FilterKey = "all" | "active";
 
-const DUMMY_SPENDINGS: SpendingItem[] = [
-  {
-    id: "1",
-    date: "2025-12-04",
-    title: "Breakfast nasi lemak",
-    category: "Food",
-    amount: 6.5,
-    wallet: "Cash",
-  },
-  {
-    id: "2",
-    date: "2025-12-04",
-    title: "MRT ride",
-    category: "Transport",
-    amount: 4.2,
-    wallet: "Touch 'n Go",
-  },
-  {
-    id: "3",
-    date: "2025-12-03",
-    title: "GrabFood dinner",
-    category: "Food",
-    amount: 26.9,
-    wallet: "Debit card",
-  },
-  {
-    id: "4",
-    date: "2025-12-02",
-    title: "Spotify",
-    category: "Subscription",
-    amount: 15.9,
-    wallet: "Credit card",
-  },
-];
-
-type FilterKey = "all" | "month" | "week" | "today";
-
-export default function SpendingPage() {
+export default function CategoryPage() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { lockHidden, unlockHidden } = useTabsUi();
-  const [showEmpty, setShowEmpty] = useState(false);
+  const { categories, toggleActive, removeCategory } = useCategory();
+  const { destructiveConfirm } = useConfirm();
+
+  const [showEmpty, setShowEmpty] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
 
   useFocusEffect(
@@ -77,43 +37,30 @@ export default function SpendingPage() {
 
   const filtered = useMemo(() => {
     if (showEmpty) return [];
-    return DUMMY_SPENDINGS;
-  }, [filter, showEmpty]);
+    return categories.filter((c) => {
+      if (filter === "all") return true;
+      if (filter === "active") return c.active;
+      return true;
+    });
+  }, [categories, filter, showEmpty]);
 
-  const grouped = useMemo(() => {
-    return filtered.reduce<Record<string, SpendingItem[]>>((acc, item) => {
-      if (!acc[item.date]) acc[item.date] = [];
-      acc[item.date].push(item);
-      return acc;
-    }, {});
-  }, [filtered]);
-
-  const total = useMemo(
-    () => filtered.reduce((sum, s) => sum + s.amount, 0),
-    [filtered]
-  );
+  const total = filtered.length;
+  const activeCount = filtered.filter((c) => c.active).length;
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: "all", label: "All" },
-    { key: "today", label: "Today" },
-    { key: "week", label: "This week" },
-    { key: "month", label: "This month" },
+    { key: "active", label: "Active" },
   ];
 
   const emptyTitle: Record<FilterKey, string> = {
-    all: "No spending yet",
-    today: "No spending today",
-    week: "No spending this week",
-    month: "No spending this month",
+    all: "No categories yet",
+    active: "No active categories",
   };
 
   const emptySubtitle: Record<FilterKey, string> = {
-    all: "When you log your first expense, it will appear here.",
-    today:
-      "No records for today. New expenses you add for today will show up here.",
-    week: "No records for this week. Track a few purchases to see the pattern.",
-    month:
-      "No records for this month yet. Start logging spending to see your totals.",
+    all: "Create your first category to start grouping your spending.",
+    active:
+      "Turn on “Active” for categories you want to use when adding spending and reports.",
   };
 
   const burgerRightSlot = (
@@ -131,6 +78,21 @@ export default function SpendingPage() {
     </View>
   );
 
+  const resolveIcon = (iconKey: string | undefined) => {
+    const found = CATEGORY_ICONS.find((i) => i.key === iconKey);
+    return found?.icon ?? Tag;
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    const ok = await destructiveConfirm({
+      title: `Confirm Deletion`,
+      message: `Delete “${name}” category?`,
+    });
+
+    if (!ok) return;
+    removeCategory(id);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -144,8 +106,8 @@ export default function SpendingPage() {
         }}
       >
         <Header
-          title="Spending"
-          subtitle="Track your spending"
+          title="Categories"
+          subtitle="Organise how you track spending"
           rightSlot={burgerRightSlot}
         />
 
@@ -192,6 +154,7 @@ export default function SpendingPage() {
           style={{
             borderRadius: tokens.radii.lg,
             borderWidth: 0.7,
+            backgroundColor: colors.surface,
             borderColor: colors.outlineVariant,
           }}
         >
@@ -203,12 +166,12 @@ export default function SpendingPage() {
             }}
           >
             <View style={{ gap: 2 }}>
-              <BodySmall muted>Total spent (filtered)</BodySmall>
-              <H2 weight="bold">RM {total.toFixed(2)}</H2>
+              <BodySmall muted>Categories (filtered)</BodySmall>
+              <H2 weight="bold">{total}</H2>
             </View>
             <View style={{ alignItems: "flex-end" }}>
-              <BodySmall muted>Transactions</BodySmall>
-              <Body>{filtered.length}</Body>
+              <BodySmall muted>Active</BodySmall>
+              <Body>{activeCount}</Body>
             </View>
           </Card.Content>
         </Card>
@@ -243,7 +206,7 @@ export default function SpendingPage() {
                     backgroundColor: colors.surfaceVariant,
                   }}
                 >
-                  <ReceiptText size={24} color={colors.onSurfaceVariant} />
+                  <Tag size={24} color={colors.onSurfaceVariant} />
                 </View>
 
                 <H2
@@ -266,45 +229,120 @@ export default function SpendingPage() {
               </Card.Content>
             </Card>
           ) : (
-            Object.entries(grouped).map(([date, items]) => (
-              <View key={date} style={{ gap: tokens.spacing.xs }}>
-                <BodySmall muted>{date}</BodySmall>
-                {items.map((item) => (
-                  <Card
-                    key={item.id}
+            filtered.map((item) => {
+              const IconComp = resolveIcon(item.iconKey as any);
+
+              return (
+                <Card
+                  key={item.id}
+                  style={{
+                    borderRadius: tokens.radii.lg,
+                    borderWidth: 0.6,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.outlineVariant,
+                  }}
+                >
+                  <Card.Content
                     style={{
-                      borderRadius: tokens.radii.lg,
-                      borderWidth: 0.6,
-                      borderColor: colors.outlineVariant,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: tokens.spacing.md,
                     }}
                   >
-                    <Card.Content
+                    <View
                       style={{
-                        flexDirection: "row",
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
                         alignItems: "center",
-                        justifyContent: "space-between",
+                        justifyContent: "center",
+                        backgroundColor: colors.surfaceVariant,
                       }}
                     >
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <Body weight="semibold">{item.title}</Body>
+                      <IconComp size={20} color={colors.onSurface} />
+                    </View>
+
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Body weight="semibold">{item.name}</Body>
+                      {item.monthlyLimit ? (
                         <BodySmall muted>
-                          {item.category} · {item.wallet}
+                          Limit RM {item.monthlyLimit.toFixed(2)}
                         </BodySmall>
-                      </View>
-                      <Body
-                        weight="semibold"
+                      ) : (
+                        <BodySmall muted>Default category</BodySmall>
+                      )}
+                    </View>
+
+                    <View
+                      style={{
+                        alignItems: "flex-end",
+                        gap: tokens.spacing.xs,
+                      }}
+                    >
+                      <View
                         style={{
-                          color: colors.error,
-                          marginLeft: tokens.spacing.lg,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: tokens.spacing.xs,
                         }}
                       >
-                        - RM {item.amount.toFixed(2)}
-                      </Body>
-                    </Card.Content>
-                  </Card>
-                ))}
-              </View>
-            ))
+                        <BodySmall muted>Active</BodySmall>
+                        <Switch
+                          value={item.active}
+                          onValueChange={() => toggleActive(item.id)}
+                          thumbColor={
+                            item.active ? colors.primary : colors.surface
+                          }
+                          trackColor={{
+                            false: colors.surfaceVariant,
+                            true: colors.primaryContainer,
+                          }}
+                        />
+                      </View>
+
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          gap: tokens.spacing.sm,
+                        }}
+                      >
+                        <Pressable
+                          hitSlop={8}
+                          onPress={() =>
+                            router.push({
+                              pathname: "(modals)/addCategory",
+                              params: { id: item.id },
+                            })
+                          }
+                        >
+                          <BodySmall
+                            weight="semibold"
+                            style={{ color: colors.primary }}
+                          >
+                            Edit
+                          </BodySmall>
+                        </Pressable>
+
+                        <Pressable
+                          hitSlop={8}
+                          onPress={() =>
+                            handleDeleteCategory(item.id, item.name)
+                          }
+                        >
+                          <BodySmall
+                            weight="semibold"
+                            style={{ color: colors.error }}
+                          >
+                            Delete
+                          </BodySmall>
+                        </Pressable>
+                      </View>
+                    </View>
+                  </Card.Content>
+                </Card>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -331,21 +369,12 @@ export default function SpendingPage() {
           }}
         >
           <Button
-            variant="secondary"
+            variant="default"
             size="md"
             style={{ flex: 1 }}
             onPress={() => router.push("(modals)/addCategory")}
           >
             Add category
-          </Button>
-
-          <Button
-            variant="default"
-            size="md"
-            style={{ flex: 1 }}
-            onPress={() => router.push("(tabs)/a/addSpending")}
-          >
-            Add spending
           </Button>
         </View>
       </View>

@@ -9,21 +9,13 @@ export default function ModalLayout() {
         headerShown: false,
         animation: "slide_from_bottom",
         contentStyle: { backgroundColor: "transparent" },
-        gestureEnabled: true,
+        gestureEnabled: false,
       }}
     >
-      <Stack.Screen
-        name="signIn"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="signUp"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="forgot"
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="signIn" options={{ headerShown: false }} />
+      <Stack.Screen name="signUp" options={{ headerShown: false }} />
+      <Stack.Screen name="forgot" options={{ headerShown: false }} />
+      <Stack.Screen name="addCategory" options={{ headerShown: false }} />
     </Stack>
   );
 }

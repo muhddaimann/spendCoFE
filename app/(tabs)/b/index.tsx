@@ -14,18 +14,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, padding: tokens.spacing.md }}>
-      <H1 style={{ marginBottom: tokens.spacing.lg }}>Settings</H1>
 
-      <Button
-        variant="destructive"
-        onPress={signOut}
-        fullWidth
-        rounded="sm"
-        IconLeft={LogOut}
-        loading={loading}
-      >
-        Sign Out
-      </Button>
     </View>
   );
 }

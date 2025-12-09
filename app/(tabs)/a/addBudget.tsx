@@ -77,8 +77,6 @@ export default function AddBudget({
         note: note.trim() || undefined,
       };
 
-      // await apiCreateOrUpdateBudget(payload);
-
       toast({
         message: mode === "add" ? "Budget saved" : "Budget updated",
         variant: "success",
@@ -113,14 +111,6 @@ export default function AddBudget({
           title="Budget"
           subtitle={mode === "add" ? "Create a new budget" : "Edit budget"}
         />
-
-        <View style={{ gap: tokens.spacing.xs }}>
-          <H2 weight="bold">{mode === "add" ? "Add budget" : "Edit budget"}</H2>
-          <BodySmall muted>
-            Set a simple limit so you know how much you can spend.
-          </BodySmall>
-        </View>
-
         <View
           style={{
             gap: tokens.spacing.sm,
