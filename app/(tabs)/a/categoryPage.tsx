@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, View, Pressable } from "react-native";
-import { useTheme, Chip, Divider, Card, Switch } from "react-native-paper";
+import { ScrollView, View } from "react-native";
+import { useTheme, Chip, Divider, Card } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useDesign } from "../../../contexts/designContext";
@@ -9,8 +9,11 @@ import { Header } from "../../../components/shared/header";
 import { useTabsUi } from "../../../contexts/tabContext";
 import { Tag } from "lucide-react-native";
 import { Button } from "../../../components/atom/button";
-import { useCategory, CATEGORY_ICONS } from "../../../hooks/useCategory";
+import { useCategoryStore } from "../../../hooks/useCategory";
 import { useConfirm } from "../../../hooks/useOverlay";
+import { useDelayedLoader } from "../../../hooks/useDelayedLoader";
+import { InlineLoader } from "../../../components/shared/inlineLoader";
+import { CategoryCard } from "../../../components/shared/CategoryCard";
 
 type FilterKey = "all" | "active";
 
@@ -20,29 +23,33 @@ export default function CategoryPage() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { lockHidden, unlockHidden } = useTabsUi();
-  const { categories, toggleActive, removeCategory } = useCategory();
+  const { categories, loading, error, removeCategory, loadCategories } =
+    useCategoryStore();
   const { destructiveConfirm } = useConfirm();
 
-  const [showEmpty, setShowEmpty] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
+
+  const showListLoader = useDelayedLoader(loading.load, 300);
 
   useFocusEffect(
     React.useCallback(() => {
       lockHidden();
+      void loadCategories();
       return () => {
         unlockHidden();
       };
-    }, [lockHidden, unlockHidden])
+    }, [lockHidden, unlockHidden, loadCategories])
   );
 
-  const filtered = useMemo(() => {
-    if (showEmpty) return [];
-    return categories.filter((c) => {
-      if (filter === "all") return true;
-      if (filter === "active") return c.active;
-      return true;
-    });
-  }, [categories, filter, showEmpty]);
+  const filtered = useMemo(
+    () =>
+      categories.filter((c) => {
+        if (filter === "all") return true;
+        if (filter === "active") return c.active;
+        return true;
+      }),
+    [categories, filter]
+  );
 
   const total = filtered.length;
   const activeCount = filtered.filter((c) => c.active).length;
@@ -63,34 +70,14 @@ export default function CategoryPage() {
       "Turn on “Active” for categories you want to use when adding spending and reports.",
   };
 
-  const burgerRightSlot = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <BodySmall muted>Empty</BodySmall>
-      <Switch
-        value={showEmpty}
-        onValueChange={setShowEmpty}
-        thumbColor={colors.primary}
-        trackColor={{
-          false: colors.surfaceVariant,
-          true: colors.primaryContainer,
-        }}
-      />
-    </View>
-  );
-
-  const resolveIcon = (iconKey: string | undefined) => {
-    const found = CATEGORY_ICONS.find((i) => i.key === iconKey);
-    return found?.icon ?? Tag;
-  };
-
   const handleDeleteCategory = async (id: string, name: string) => {
     const ok = await destructiveConfirm({
-      title: `Confirm Deletion`,
+      title: "Confirm Deletion",
       message: `Delete “${name}” category?`,
     });
 
     if (!ok) return;
-    removeCategory(id);
+    await removeCategory(id);
   };
 
   return (
@@ -105,11 +92,7 @@ export default function CategoryPage() {
             tokens.spacing["3xl"] + insets.bottom + tokens.spacing.lg,
         }}
       >
-        <Header
-          title="Categories"
-          subtitle="Organise how you track spending"
-          rightSlot={burgerRightSlot}
-        />
+        <Header title="Categories" subtitle="Organise how you track spending" />
 
         <View
           style={{
@@ -179,7 +162,11 @@ export default function CategoryPage() {
         <Divider />
 
         <View style={{ gap: tokens.spacing.md }}>
-          {filtered.length === 0 ? (
+          {showListLoader ? (
+            <InlineLoader label="Loading categories…" />
+          ) : error ? (
+            <BodySmall style={{ color: colors.error }}>{error}</BodySmall>
+          ) : filtered.length === 0 ? (
             <Card
               style={{
                 borderRadius: tokens.radii["2xl"],
@@ -229,120 +216,13 @@ export default function CategoryPage() {
               </Card.Content>
             </Card>
           ) : (
-            filtered.map((item) => {
-              const IconComp = resolveIcon(item.iconKey as any);
-
-              return (
-                <Card
-                  key={item.id}
-                  style={{
-                    borderRadius: tokens.radii.lg,
-                    borderWidth: 0.6,
-                    backgroundColor: colors.surface,
-                    borderColor: colors.outlineVariant,
-                  }}
-                >
-                  <Card.Content
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: tokens.spacing.md,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: colors.surfaceVariant,
-                      }}
-                    >
-                      <IconComp size={20} color={colors.onSurface} />
-                    </View>
-
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <Body weight="semibold">{item.name}</Body>
-                      {item.monthlyLimit ? (
-                        <BodySmall muted>
-                          Limit RM {item.monthlyLimit.toFixed(2)}
-                        </BodySmall>
-                      ) : (
-                        <BodySmall muted>Default category</BodySmall>
-                      )}
-                    </View>
-
-                    <View
-                      style={{
-                        alignItems: "flex-end",
-                        gap: tokens.spacing.xs,
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: tokens.spacing.xs,
-                        }}
-                      >
-                        <BodySmall muted>Active</BodySmall>
-                        <Switch
-                          value={item.active}
-                          onValueChange={() => toggleActive(item.id)}
-                          thumbColor={
-                            item.active ? colors.primary : colors.surface
-                          }
-                          trackColor={{
-                            false: colors.surfaceVariant,
-                            true: colors.primaryContainer,
-                          }}
-                        />
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          gap: tokens.spacing.sm,
-                        }}
-                      >
-                        <Pressable
-                          hitSlop={8}
-                          onPress={() =>
-                            router.push({
-                              pathname: "(modals)/addCategory",
-                              params: { id: item.id },
-                            })
-                          }
-                        >
-                          <BodySmall
-                            weight="semibold"
-                            style={{ color: colors.primary }}
-                          >
-                            Edit
-                          </BodySmall>
-                        </Pressable>
-
-                        <Pressable
-                          hitSlop={8}
-                          onPress={() =>
-                            handleDeleteCategory(item.id, item.name)
-                          }
-                        >
-                          <BodySmall
-                            weight="semibold"
-                            style={{ color: colors.error }}
-                          >
-                            Delete
-                          </BodySmall>
-                        </Pressable>
-                      </View>
-                    </View>
-                  </Card.Content>
-                </Card>
-              );
-            })
+            filtered.map((item) => (
+              <CategoryCard
+                key={item.id}
+                item={item}
+                onDelete={handleDeleteCategory}
+              />
+            ))
           )}
         </View>
       </ScrollView>

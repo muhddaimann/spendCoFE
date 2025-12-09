@@ -61,13 +61,19 @@ spendCo/
 ├─ app/
 │  ├─ (modals)/
 │  │  ├─ _layout.tsx
+│  │  ├─ addCategory.tsx
 │  │  ├─ forgot.tsx
 │  │  ├─ signIn.tsx
 │  │  └─ signUp.tsx
 │  ├─ (tabs)/
 │  │  ├─ a/
 │  │  │  ├─ _layout.tsx
-│  │  │  └─ index.tsx
+│  │  │  ├─ addBudget.tsx
+│  │  │  ├─ addSpending.tsx
+│  │  │  ├─ budgetPage.tsx
+│  │  │  ├─ categoryPage.tsx
+│  │  │  ├─ index.tsx
+│  │  │  └─ spendingPage.tsx
 │  │  ├─ b/
 │  │  │  ├─ _layout.tsx
 │  │  │  └─ index.tsx
@@ -86,9 +92,12 @@ spendCo/
 │  │  ├─ confirm.tsx
 │  │  ├─ fab.tsx
 │  │  ├─ modal.tsx
+│  │  ├─ options.tsx
 │  │  └─ toast.tsx
 │  └─ shared/
-│     └─ header.tsx
+│     ├─ header.tsx
+│     ├─ homeHeader.tsx
+│     └─ navBar.tsx
 ├─ constants/
 │  ├─ design.ts
 │  └─ theme.ts
@@ -96,15 +105,18 @@ spendCo/
 │  ├─ api/
 │  │  ├─ api.ts
 │  │  ├─ auth.ts
-│  │  ├─ user.ts
 │  │  ├─ categories.ts
-│  │  └─ transactions.ts
-│  ├─ tokenStorage.tsx
+│  │  ├─ transactions.ts
+│  │  └─ user.ts
 │  ├─ authContext.tsx
 │  ├─ designContext.tsx
 │  ├─ overlayContext.tsx
-│  └─ themeContext.tsx
+│  ├─ tabContext.tsx
+│  ├─ themeContext.tsx
+│  └─ tokenStorage.tsx
 ├─ hooks/
+│  ├─ useCategory.tsx
+│  ├─ useGreeting.tsx
 │  └─ useOverlay.tsx
 ├─ .gitignore
 ├─ app.json

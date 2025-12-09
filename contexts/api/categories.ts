@@ -4,22 +4,35 @@ export type Category = {
   id: number;
   user_id: number;
   name: string;
-  type: "income" | "expense";
-  color: string | null;
+  icon_key: string;
+  active: boolean;
+  monthly_limit: number | null;
   created_at: string;
   updated_at: string | null;
 };
 
+type CategoryListResponse =
+  | Category[]
+  | { data: Category[] }
+  | { categories: Category[] };
+
 export async function apiGetCategories(): Promise<Category[]> {
-  return apiRequest<Category[]>("/api/categories", {
+  const res = await apiRequest<CategoryListResponse>("/api/categories", {
     auth: true,
   });
+
+  if (Array.isArray(res)) return res;
+  if ("data" in res && Array.isArray(res.data)) return res.data;
+  if ("categories" in res && Array.isArray(res.categories))
+    return res.categories;
+
+  return [];
 }
 
 export type CreateCategoryRequest = {
   name: string;
-  type: "income" | "expense";
-  color?: string | null;
+  icon_key?: string;
+  monthly_limit?: number | null;
 };
 
 export async function apiCreateCategory(
@@ -32,7 +45,9 @@ export async function apiCreateCategory(
   });
 }
 
-export type UpdateCategoryRequest = Partial<CreateCategoryRequest>;
+export type UpdateCategoryRequest = Partial<
+  CreateCategoryRequest & { active?: boolean }
+>;
 
 export async function apiUpdateCategory(
   id: number,

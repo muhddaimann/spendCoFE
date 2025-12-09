@@ -34,11 +34,23 @@ export async function apiRequest<T>(
   });
 
   const text = await res.text();
-  const json = text ? JSON.parse(text) : null;
+
+  let json: any = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      json = null;
+    }
+  }
 
   if (!res.ok) {
-    const msg = json?.message || "Request failed";
+    const msg = json?.message || text || "Request failed";
     throw new Error(msg);
+  }
+
+  if (json === null) {
+    return {} as T;
   }
 
   return json as T;

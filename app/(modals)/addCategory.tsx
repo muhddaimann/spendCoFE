@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   ScrollView,
   View,
@@ -6,18 +6,19 @@ import {
   InteractionManager,
   Pressable,
 } from "react-native";
-import { useTheme, TextInput, Switch, Divider, Card } from "react-native-paper";
+import { useTheme, TextInput, Card } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import { Button } from "../../components/atom/button";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Body, BodySmall } from "../../components/atom/text";
 import { useToast } from "../../hooks/useOverlay";
 import { Header } from "../../components/shared/header";
 import {
+  useCategoryStore,
   CATEGORY_ICONS,
-  CategoryIconKey,
   DEFAULT_ICON_KEY,
+  type CategoryIconKey,
 } from "../../hooks/useCategory";
 import { Tag } from "lucide-react-native";
 
@@ -28,8 +29,21 @@ export default function AddCategory() {
   const router = useRouter();
   const toast = useToast();
 
+  const { categories, addCategory, updateCategory, loading } =
+    useCategoryStore();
+
+  const params = useLocalSearchParams<{ id?: string }>();
+  const editingId =
+    typeof params.id === "string" && params.id.trim().length > 0
+      ? params.id
+      : undefined;
+
+  const editingCategory = useMemo(
+    () => categories.find((c) => c.id === editingId),
+    [categories, editingId]
+  );
+
   const [name, setName] = useState("");
-  const [active, setActive] = useState(true);
   const [limit, setLimit] = useState("");
   const [iconKey, setIconKey] = useState<CategoryIconKey>(DEFAULT_ICON_KEY);
   const [fieldErr, setFieldErr] = useState<{ name?: string; limit?: string }>(
@@ -46,11 +60,21 @@ export default function AddCategory() {
     return () => task.cancel();
   }, []);
 
+  useEffect(() => {
+    if (!editingId || !editingCategory) return;
+    setName(editingCategory.name);
+    setLimit(
+      editingCategory.monthlyLimit !== undefined
+        ? String(editingCategory.monthlyLimit)
+        : ""
+    );
+    setIconKey(editingCategory.iconKey);
+  }, [editingId, editingCategory]);
+
   useFocusEffect(
     React.useCallback(() => {
       return () => {
         setName("");
-        setActive(true);
         setLimit("");
         setIconKey(DEFAULT_ICON_KEY);
         setFieldErr({});
@@ -60,15 +84,19 @@ export default function AddCategory() {
 
   const isValid = name.trim().length > 0;
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const n = name.trim();
     const nextErr: typeof fieldErr = {};
     if (!n) nextErr.name = "Required";
+
+    let parsedLimit: number | undefined;
 
     if (limit.trim()) {
       const parsed = Number(limit.replace(/,/g, ""));
       if (Number.isNaN(parsed) || parsed < 0) {
         nextErr.limit = "Enter a valid amount";
+      } else {
+        parsedLimit = parsed;
       }
     }
 
@@ -82,18 +110,28 @@ export default function AddCategory() {
       return;
     }
 
-    const payload = {
-      name: n,
-      active,
-      iconKey,
-      defaultMonthlyLimit: limit.trim()
-        ? Number(limit.replace(/,/g, ""))
-        : undefined,
-    };
-
-    console.log("New category:", payload);
-    toast("Category saved");
-    router.back();
+    try {
+      if (editingId) {
+        await updateCategory(editingId, {
+          name: n,
+          iconKey,
+          monthlyLimit: parsedLimit,
+        });
+        toast({ message: "Category updated", variant: "success" });
+      } else {
+        await addCategory({
+          name: n,
+          active: true,
+          iconKey,
+          monthlyLimit: parsedLimit,
+        });
+        toast({ message: "Category created", variant: "success" });
+      }
+      router.back();
+    } catch (e: any) {
+      const msg = e?.message || "Something went wrong";
+      toast({ message: msg, variant: "error" });
+    }
   };
 
   const resolveIcon = (key: CategoryIconKey) => {
@@ -102,10 +140,16 @@ export default function AddCategory() {
   };
 
   const IconPreview = resolveIcon(iconKey);
-  const displayName = name.trim() || "New category";
+  const displayName =
+    name.trim() || (editingId ? "Edit category" : "New category");
   const displayLimit = limit.trim()
     ? Number(limit.replace(/,/g, ""))
     : undefined;
+
+  const isSubmitting =
+    loading.add || (editingId ? loading.update[editingId] : false);
+
+  const title = editingId ? "Edit category" : "New category";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
@@ -123,7 +167,7 @@ export default function AddCategory() {
         keyboardShouldPersistTaps="handled"
       >
         <Header
-          title="New category"
+          title={title}
           subtitle="Keep your spending organised with simple labels"
         />
 
@@ -158,7 +202,7 @@ export default function AddCategory() {
 
             <TextInput
               mode="outlined"
-              label="Default monthly limit (optional)"
+              label="Default monthly limit (RM)"
               value={limit}
               onChangeText={(t) => {
                 setLimit(t);
@@ -182,8 +226,6 @@ export default function AddCategory() {
               </BodySmall>
             ) : null}
           </View>
-
-          <Divider />
 
           <View style={{ gap: tokens.spacing.sm }}>
             <BodySmall muted>Icon</BodySmall>
@@ -230,34 +272,6 @@ export default function AddCategory() {
             </ScrollView>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: tokens.spacing.sm,
-            }}
-          >
-            <View style={{ flex: 1, marginRight: tokens.spacing.sm }}>
-              <Body weight="semibold">Active</Body>
-              <BodySmall muted>
-                Active categories will appear when adding spending and in budget
-                reports.
-              </BodySmall>
-            </View>
-            <Switch
-              value={active}
-              onValueChange={setActive}
-              thumbColor={active ? colors.primary : colors.surface}
-              trackColor={{
-                false: colors.surfaceVariant,
-                true: colors.primaryContainer,
-              }}
-            />
-          </View>
-
-          <Divider />
-
           <View style={{ gap: tokens.spacing.sm }}>
             <BodySmall muted>Preview</BodySmall>
 
@@ -297,7 +311,7 @@ export default function AddCategory() {
                       Limit RM {displayLimit.toFixed(2)}
                     </BodySmall>
                   ) : (
-                    <BodySmall muted>Default category</BodySmall>
+                    <BodySmall muted>Optional Amount</BodySmall>
                   )}
                 </View>
 
@@ -307,24 +321,7 @@ export default function AddCategory() {
                     gap: tokens.spacing.xs,
                   }}
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: tokens.spacing.xs,
-                    }}
-                  >
-                    <BodySmall muted>Active</BodySmall>
-                    <Switch
-                      value={active}
-                      disabled
-                      thumbColor={active ? colors.primary : colors.surface}
-                      trackColor={{
-                        false: colors.surfaceVariant,
-                        true: colors.primaryContainer,
-                      }}
-                    />
-                  </View>
+                  <BodySmall muted>Active on create</BodySmall>
                 </View>
               </Card.Content>
             </Card>
@@ -359,11 +356,11 @@ export default function AddCategory() {
             <Button
               onPress={onSubmit}
               variant="default"
-              disabled={!isValid}
+              disabled={!isValid || isSubmitting}
               size="md"
               style={{ flex: 1 }}
             >
-              Save category
+              {editingId ? "Update category" : "Save category"}
             </Button>
           </View>
         </View>
