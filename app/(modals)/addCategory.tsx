@@ -96,13 +96,13 @@ export default function AddCategory() {
   );
 
   useEffect(() => {
-    if (name.trim().length > 0 && previewMode !== "preview") {
+    if (name.trim().length > 0) {
       setPreviewMode("preview");
     }
     if (name.trim().length === 0 && !editingId) {
       setPreviewMode("suggest");
     }
-  }, [name, previewMode, editingId]);
+  }, [name, editingId]);
 
   const isValid = name.trim().length > 0;
 
@@ -151,8 +151,14 @@ export default function AddCategory() {
       }
       router.back();
     } catch (e: any) {
-      const msg = e?.message || "Something went wrong";
-      toast({ message: msg, variant: "error" });
+      if (e.message.includes("already exists")) {
+        setFieldErr((err) => ({ ...err, name: e.message }));
+      } else {
+        toast({
+          message: e.message || "Something went wrong",
+          variant: "error",
+        });
+      }
     }
   };
 
@@ -420,14 +426,11 @@ export default function AddCategory() {
                 </ScrollView>
 
                 <BodySmall muted style={{ marginTop: 6 }}>
-                  Tap a suggestion to use it or type your own name to preview.
+                  Tap a suggestion to use it, or type your own name to preview.
                 </BodySmall>
               </>
             ) : (
-              <Pressable
-                onPress={() => setPreviewMode("suggest")}
-                accessibilityLabel="Edit suggestion"
-              >
+              <View accessibilityLabel="Preview card">
                 <Card
                   style={{
                     borderRadius: tokens.radii.lg,
@@ -471,7 +474,7 @@ export default function AddCategory() {
                     <View style={{ width: 36 }} />
                   </Card.Content>
                 </Card>
-              </Pressable>
+              </View>
             )}
           </View>
         </View>

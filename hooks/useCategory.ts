@@ -159,6 +159,12 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   },
 
   addCategory: async (input) => {
+    const existing = get().categories.find(
+      (c) => c.name.trim().toLowerCase() === input.name.trim().toLowerCase()
+    );
+    if (existing) {
+      throw new Error("A category with this name already exists.");
+    }
     set((state) => ({
       loading: { ...state.loading, add: true },
       error: null,
@@ -182,6 +188,16 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   },
 
   updateCategory: async (id, patch) => {
+    if (patch.name) {
+      const existing = get().categories.find(
+        (c) =>
+          c.id !== id &&
+          c.name.trim().toLowerCase() === patch.name!.trim().toLowerCase()
+      );
+      if (existing) {
+        throw new Error("A category with this name already exists.");
+      }
+    }
     set((state) => ({
       loading: {
         ...state.loading,
