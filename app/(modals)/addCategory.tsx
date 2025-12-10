@@ -22,6 +22,13 @@ import {
 } from "../../hooks/useCategory";
 import { Tag } from "lucide-react-native";
 
+type Suggestion = {
+  key: string;
+  name: string;
+  iconKey: CategoryIconKey;
+  monthlyLimit: number | undefined;
+};
+
 export default function AddCategory() {
   const { colors } = useTheme();
   const { tokens } = useDesign();
@@ -50,6 +57,10 @@ export default function AddCategory() {
     {}
   );
 
+  const [previewMode, setPreviewMode] = useState<"suggest" | "preview">(
+    editingId ? "preview" : "suggest"
+  );
+
   const nameRef = useRef<RNInput>(null);
   const limitRef = useRef<RNInput>(null);
 
@@ -69,6 +80,7 @@ export default function AddCategory() {
         : ""
     );
     setIconKey(editingCategory.iconKey);
+    setPreviewMode("preview");
   }, [editingId, editingCategory]);
 
   useFocusEffect(
@@ -78,9 +90,19 @@ export default function AddCategory() {
         setLimit("");
         setIconKey(DEFAULT_ICON_KEY);
         setFieldErr({});
+        setPreviewMode("suggest");
       };
     }, [])
   );
+
+  useEffect(() => {
+    if (name.trim().length > 0 && previewMode !== "preview") {
+      setPreviewMode("preview");
+    }
+    if (name.trim().length === 0 && !editingId) {
+      setPreviewMode("suggest");
+    }
+  }, [name, previewMode, editingId]);
 
   const isValid = name.trim().length > 0;
 
@@ -151,6 +173,62 @@ export default function AddCategory() {
 
   const title = editingId ? "Edit category" : "New category";
 
+  const suggestions = useMemo<Suggestion[]>(() => {
+    const activeUser = categories
+      .filter((c) => c.active)
+      .slice(0, 3)
+      .map((c) => ({
+        key: `user-${c.id}`,
+        name: c.name,
+        iconKey: c.iconKey,
+        monthlyLimit: c.monthlyLimit ?? undefined,
+      }));
+
+    const defaults: Suggestion[] = [
+      { key: "def-food", name: "Food", iconKey: "food", monthlyLimit: 200 },
+      {
+        key: "def-coffee",
+        name: "Coffee",
+        iconKey: "coffee",
+        monthlyLimit: 40,
+      },
+      {
+        key: "def-transport",
+        name: "Transport",
+        iconKey: "transport",
+        monthlyLimit: 100,
+      },
+      { key: "def-bills", name: "Bills", iconKey: "bills", monthlyLimit: 300 },
+      {
+        key: "def-shopping",
+        name: "Shopping",
+        iconKey: "shopping",
+        monthlyLimit: 150,
+      },
+    ];
+
+    const seen = new Set<string>();
+    const merged: Suggestion[] = [];
+
+    for (const s of activeUser.concat(defaults)) {
+      const low = s.name.trim().toLowerCase();
+      if (seen.has(low)) continue;
+      seen.add(low);
+      merged.push(s);
+      if (merged.length >= 5) break;
+    }
+
+    return merged;
+  }, [categories]);
+
+  const useSuggestion = (s: Suggestion) => {
+    setName(s.name);
+    setIconKey(s.iconKey);
+    setLimit(s.monthlyLimit !== undefined ? String(s.monthlyLimit) : "");
+    setPreviewMode("preview");
+    nameRef.current?.focus();
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <ScrollView
@@ -202,7 +280,7 @@ export default function AddCategory() {
 
             <TextInput
               mode="outlined"
-              label="Default monthly limit (RM)"
+              label="Optional monthly limit (RM)"
               value={limit}
               onChangeText={(t) => {
                 setLimit(t);
@@ -273,58 +351,128 @@ export default function AddCategory() {
           </View>
 
           <View style={{ gap: tokens.spacing.sm }}>
-            <BodySmall muted>Preview</BodySmall>
+            <BodySmall muted>
+              {previewMode === "suggest" ? "Suggestions" : "Preview"}
+            </BodySmall>
 
-            <Card
-              style={{
-                borderRadius: tokens.radii.lg,
-                borderWidth: 0.6,
-                borderColor: colors.outlineVariant,
-                backgroundColor: colors.surface,
-              }}
-            >
-              <Card.Content
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: tokens.spacing.md,
-                }}
+            {previewMode === "suggest" ? (
+              <>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{
+                    gap: tokens.spacing.sm,
+                    paddingVertical: tokens.spacing.xs,
+                  }}
+                >
+                  {suggestions.map((s) => {
+                    const IconComp = resolveIcon(s.iconKey);
+                    return (
+                      <Pressable
+                        key={s.key}
+                        onPress={() => useSuggestion(s)}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: tokens.spacing.xs,
+                          paddingHorizontal: tokens.spacing.md,
+                          paddingVertical: tokens.spacing.xs,
+                          borderRadius: tokens.radii.pill,
+                          borderWidth: 0.6,
+                          borderColor: colors.outlineVariant,
+                          backgroundColor: colors.surface,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 14,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: colors.surfaceVariant,
+                          }}
+                        >
+                          <IconComp size={14} color={colors.onSurface} />
+                        </View>
+
+                        <View style={{ gap: 2 }}>
+                          <BodySmall
+                            weight="semibold"
+                            style={{ fontSize: tokens.typography.sizes.xs }}
+                          >
+                            {s.name}
+                          </BodySmall>
+                          {s.monthlyLimit !== undefined ? (
+                            <BodySmall
+                              muted
+                              style={{
+                                fontSize: tokens.typography.sizes.xs,
+                              }}
+                            >
+                              RM {s.monthlyLimit}
+                            </BodySmall>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                <BodySmall muted style={{ marginTop: 6 }}>
+                  Tap a suggestion to use it or type your own name to preview.
+                </BodySmall>
+              </>
+            ) : (
+              <Pressable
+                onPress={() => setPreviewMode("suggest")}
+                accessibilityLabel="Edit suggestion"
               >
-                <View
+                <Card
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: colors.surfaceVariant,
+                    borderRadius: tokens.radii.lg,
+                    borderWidth: 0.6,
+                    borderColor: colors.outlineVariant,
+                    backgroundColor: colors.surface,
                   }}
                 >
-                  <IconPreview size={20} color={colors.onSurface} />
-                </View>
+                  <Card.Content
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: tokens.spacing.md,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: colors.surfaceVariant,
+                      }}
+                    >
+                      <IconPreview size={20} color={colors.onSurface} />
+                    </View>
 
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Body weight="semibold">{displayName}</Body>
-                  {displayLimit !== undefined ? (
-                    <BodySmall muted>
-                      Limit RM {displayLimit.toFixed(2)}
-                    </BodySmall>
-                  ) : (
-                    <BodySmall muted>Optional Amount</BodySmall>
-                  )}
-                </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Body weight="semibold">{displayName}</Body>
+                      {displayLimit !== undefined ? (
+                        <BodySmall muted>
+                          Limit RM {displayLimit.toFixed(2)}
+                        </BodySmall>
+                      ) : (
+                        <BodySmall muted>Optional Amount</BodySmall>
+                      )}
+                    </View>
 
-                <View
-                  style={{
-                    alignItems: "flex-end",
-                    gap: tokens.spacing.xs,
-                  }}
-                >
-                  <BodySmall muted>Active on create</BodySmall>
-                </View>
-              </Card.Content>
-            </Card>
+                    <View style={{ width: 36 }} />
+                  </Card.Content>
+                </Card>
+              </Pressable>
+            )}
           </View>
         </View>
       </ScrollView>

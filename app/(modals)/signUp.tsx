@@ -6,7 +6,7 @@ import {
   Animated,
   InteractionManager,
 } from "react-native"; 
-import { useTheme, TextInput, Divider } from "react-native-paper";
+import { useTheme, TextInput } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDesign } from "../../contexts/designContext";
 import { Button } from "../../components/atom/button";
@@ -109,9 +109,9 @@ export default function SignUpModal() {
         contentContainerStyle={{
           flexGrow: 1,
           paddingHorizontal: tokens.spacing.lg,
-          paddingTop: tokens.spacing.lg,
+          paddingTop: tokens.spacing["2xl"],
           paddingBottom: insets.bottom + tokens.spacing.xl * 4,
-          justifyContent: "center",
+          justifyContent: "flex-start",
           gap: tokens.spacing.lg,
         }}
         bounces={false}
@@ -266,8 +266,6 @@ export default function SignUpModal() {
             ) : null}
           </View>
         </Animated.View>
-
-        <Divider style={{ marginTop: tokens.spacing.sm }} />
       </ScrollView>
 
       <View

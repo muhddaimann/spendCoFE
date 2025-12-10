@@ -7,7 +7,7 @@ export function useDelayedLoader(
   const [showLoader, setShowLoader] = useState(false);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
 
     if (isLoading) {
       timeout = setTimeout(() => {
@@ -15,13 +15,12 @@ export function useDelayedLoader(
       }, delay);
     } else {
       setShowLoader(false);
-      // If isLoading becomes false, we should not show the loader
-      // So we clear any pending timeout.
-      clearTimeout(timeout);
     }
 
     return () => {
-      clearTimeout(timeout);
+      if (timeout) {
+        clearTimeout(timeout);
+      }
     };
   }, [isLoading, delay]);
 
